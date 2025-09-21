@@ -26,7 +26,7 @@ describe('restoreCommand', () => {
     testRootDir = await fs.mkdtemp(
       path.join(os.tmpdir(), 'restore-command-test-'),
     );
-    geminiTempDir = path.join(testRootDir, '.gemini');
+    geminiTempDir = path.join(testRootDir, '.ionesco');
     checkpointsDir = path.join(geminiTempDir, 'checkpoints');
     // The command itself creates this, but for tests it's easier to have it ready.
     // Some tests might remove it to test error paths.

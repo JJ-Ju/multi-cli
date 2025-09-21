@@ -12,6 +12,7 @@ import {
   getCurrentGeminiMdFilename,
   getAllGeminiMdFilenames,
   DEFAULT_CONTEXT_FILENAME,
+  GEMINI_CONFIG_DIR,
 } from './memoryTool.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
@@ -31,6 +32,8 @@ vi.mock(import('node:fs/promises'), async (importOriginal) => {
 
 vi.mock('fs', () => ({
   mkdirSync: vi.fn(),
+  cpSync: vi.fn(),
+  existsSync: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock('os');
@@ -105,7 +108,7 @@ describe('MemoryTool', () => {
     beforeEach(() => {
       testFilePath = path.join(
         os.homedir(),
-        '.gemini',
+        GEMINI_CONFIG_DIR,
         DEFAULT_CONTEXT_FILENAME,
       );
     });
@@ -237,7 +240,7 @@ describe('MemoryTool', () => {
       // Use getCurrentGeminiMdFilename for the default expectation before any setGeminiMdFilename calls in a test
       const expectedFilePath = path.join(
         os.homedir(),
-        '.gemini',
+        GEMINI_CONFIG_DIR,
         getCurrentGeminiMdFilename(), // This will be DEFAULT_CONTEXT_FILENAME unless changed by a test
       );
 
@@ -317,9 +320,11 @@ describe('MemoryTool', () => {
       expect(result).not.toBe(false);
 
       if (result && result.type === 'edit') {
-        const expectedPath = path.join('~', '.gemini', 'GEMINI.md');
+        const expectedPath = path.join('~', GEMINI_CONFIG_DIR, 'GEMINI.md');
         expect(result.title).toBe(`Confirm Memory Save: ${expectedPath}`);
-        expect(result.fileName).toContain(path.join('mock', 'home', '.gemini'));
+        expect(result.fileName).toContain(
+          path.join('mock', 'home', GEMINI_CONFIG_DIR),
+        );
         expect(result.fileName).toContain('GEMINI.md');
         expect(result.fileDiff).toContain('Index: GEMINI.md');
         expect(result.fileDiff).toContain('+## Gemini Added Memories');
@@ -334,7 +339,7 @@ describe('MemoryTool', () => {
       const params = { fact: 'Test fact' };
       const memoryFilePath = path.join(
         os.homedir(),
-        '.gemini',
+        GEMINI_CONFIG_DIR,
         getCurrentGeminiMdFilename(),
       );
 
@@ -352,7 +357,7 @@ describe('MemoryTool', () => {
       const params = { fact: 'Test fact' };
       const memoryFilePath = path.join(
         os.homedir(),
-        '.gemini',
+        GEMINI_CONFIG_DIR,
         getCurrentGeminiMdFilename(),
       );
 
@@ -378,7 +383,7 @@ describe('MemoryTool', () => {
       const params = { fact: 'Test fact' };
       const memoryFilePath = path.join(
         os.homedir(),
-        '.gemini',
+        GEMINI_CONFIG_DIR,
         getCurrentGeminiMdFilename(),
       );
 
@@ -415,7 +420,7 @@ describe('MemoryTool', () => {
       expect(result).not.toBe(false);
 
       if (result && result.type === 'edit') {
-        const expectedPath = path.join('~', '.gemini', 'GEMINI.md');
+        const expectedPath = path.join('~', GEMINI_CONFIG_DIR, 'GEMINI.md');
         expect(result.title).toBe(`Confirm Memory Save: ${expectedPath}`);
         expect(result.fileDiff).toContain('Index: GEMINI.md');
         expect(result.fileDiff).toContain('+- New fact');

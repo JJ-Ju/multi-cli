@@ -529,7 +529,7 @@ describe('FileCommandLoader', () => {
       ).getProjectCommandsDir();
       const extensionDir = path.join(
         process.cwd(),
-        '.gemini/extensions/test-ext',
+        '.ionesco/extensions/test-ext',
       );
 
       mock({
@@ -582,7 +582,7 @@ describe('FileCommandLoader', () => {
       ).getProjectCommandsDir();
       const extensionDir = path.join(
         process.cwd(),
-        '.gemini/extensions/test-ext',
+        '.ionesco/extensions/test-ext',
       );
 
       mock({
@@ -678,11 +678,11 @@ describe('FileCommandLoader', () => {
     it('only loads commands from active extensions', async () => {
       const extensionDir1 = path.join(
         process.cwd(),
-        '.gemini/extensions/active-ext',
+        '.ionesco/extensions/active-ext',
       );
       const extensionDir2 = path.join(
         process.cwd(),
-        '.gemini/extensions/inactive-ext',
+        '.ionesco/extensions/inactive-ext',
       );
 
       mock({
@@ -737,7 +737,7 @@ describe('FileCommandLoader', () => {
     it('handles missing extension commands directory gracefully', async () => {
       const extensionDir = path.join(
         process.cwd(),
-        '.gemini/extensions/no-commands',
+        '.ionesco/extensions/no-commands',
       );
 
       mock({
@@ -769,7 +769,7 @@ describe('FileCommandLoader', () => {
     });
 
     it('handles nested command structure in extensions', async () => {
-      const extensionDir = path.join(process.cwd(), '.gemini/extensions/a');
+      const extensionDir = path.join(process.cwd(), '.ionesco/extensions/a');
 
       mock({
         [extensionDir]: {

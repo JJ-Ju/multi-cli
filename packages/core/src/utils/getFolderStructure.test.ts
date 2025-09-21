@@ -255,8 +255,8 @@ ${testRootDir}${path.sep}
       await createTestFile('file1.txt');
       await createTestFile('node_modules', 'some-package', 'index.js');
       await createTestFile('ignored.txt');
-      await createTestFile('.gemini', 'config.yaml');
-      await createTestFile('.gemini', 'logs.json');
+      await createTestFile('.ionesco', 'config.yaml');
+      await createTestFile('.ionesco', 'logs.json');
 
       const fileService = new FileDiscoveryService(testRootDir);
       const structure = await getFolderStructure(testRootDir, {
@@ -301,8 +301,8 @@ ${testRootDir}${path.sep}
       await createTestFile('file1.txt');
       await createTestFile('node_modules', 'some-package', 'index.js');
       await createTestFile('ignored.txt');
-      await createTestFile('.gemini', 'config.yaml');
-      await createTestFile('.gemini', 'logs.json');
+      await createTestFile('.ionesco', 'config.yaml');
+      await createTestFile('.ionesco', 'logs.json');
 
       const fileService = new FileDiscoveryService(testRootDir);
       const structure = await getFolderStructure(testRootDir, {
@@ -321,8 +321,8 @@ ${testRootDir}${path.sep}
       await createTestFile('file1.txt');
       await createTestFile('node_modules', 'some-package', 'index.js');
       await createTestFile('ignored.txt');
-      await createTestFile('.gemini', 'config.yaml');
-      await createTestFile('.gemini', 'logs.json');
+      await createTestFile('.ionesco', 'config.yaml');
+      await createTestFile('.ionesco', 'logs.json');
 
       const fileService = new FileDiscoveryService(testRootDir);
       const structure = await getFolderStructure(testRootDir, {

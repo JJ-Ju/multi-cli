@@ -80,11 +80,11 @@ gemini extensions link path/to/directory
 
 ## How it works
 
-On startup, Ionesco CLI looks for extensions in `<home>/.gemini/extensions`
+On startup, Ionesco CLI looks for extensions in `<home>/.ionesco/extensions`
 
 Extensions exist as a directory that contains a `gemini-extension.json` file. For example:
 
-`<home>/.gemini/extensions/my-extension/gemini-extension.json`
+`<home>/.ionesco/extensions/my-extension/gemini-extension.json`
 
 ### `gemini-extension.json`
 
@@ -122,7 +122,7 @@ Extensions can provide [custom commands](./cli/commands.md#custom-commands) by p
 An extension named `gcp` with the following structure:
 
 ```
-.gemini/extensions/gcp/
+.ionesco/extensions/gcp/
 ├── gemini-extension.json
 └── commands/
     ├── deploy.toml
@@ -153,8 +153,8 @@ Ionesco CLI extensions allow variable substitution in `gemini-extension.json`. T
 
 **Supported variables:**
 
-| variable                   | description                                                                                                                                                     |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `${extensionPath}`         | The fully-qualified path of the extension in the user's filesystem e.g., '/Users/username/.gemini/extensions/example-extension'. This will not unwrap symlinks. |
-| `${workspacePath}`         | The fully-qualified path of the current workspace.                                                                                                              |
-| `${/} or ${pathSeparator}` | The path separator (differs per OS).                                                                                                                            |
+| variable                   | description                                                                                                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `${extensionPath}`         | The fully-qualified path of the extension in the user's filesystem e.g., '/Users/username/.ionesco/extensions/example-extension'. This will not unwrap symlinks. |
+| `${workspacePath}`         | The fully-qualified path of the current workspace.                                                                                                               |
+| `${/} or ${pathSeparator}` | The path separator (differs per OS).                                                                                                                             |

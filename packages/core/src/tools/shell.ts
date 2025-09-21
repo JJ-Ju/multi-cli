@@ -23,7 +23,6 @@ import {
   Kind,
 } from './tools.js';
 import { getErrorMessage } from '../utils/errors.js';
-import { summarizeToolOutput } from '../utils/summarizer.js';
 import type {
   ShellExecutionConfig,
   ShellOutputEvent,
@@ -274,12 +273,12 @@ export class ShellToolInvocation extends BaseToolInvocation<
           }
         : {};
       if (summarizeConfig && summarizeConfig[ShellTool.Name]) {
-        const summary = await summarizeToolOutput(
-          llmContent,
-          this.config.getGeminiClient(),
-          signal,
-          summarizeConfig[ShellTool.Name].tokenBudget,
-        );
+        const tokenBudget = summarizeConfig[ShellTool.Name].tokenBudget;
+        const summary = await this.config.getToolingSupport().summarizeText({
+          text: llmContent,
+          abortSignal: signal,
+          maxOutputTokens: tokenBudget,
+        });
         return {
           llmContent: summary,
           returnDisplay: returnDisplayMessage,

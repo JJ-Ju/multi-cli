@@ -8,14 +8,18 @@ translates between the Gemini CLI's JSON protocol and the SDK's Python objects.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import json
 import mimetypes
 import os
+import re
 import threading
 import uuid
+from dataclasses import dataclass, field
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional
+from urllib import request as urllib_request
+from urllib.error import URLError
 
 from google.protobuf.json_format import MessageToDict
 
@@ -26,6 +30,7 @@ try:  # pragma: no cover - exercised indirectly via service initialisation
     from xai_sdk.chat import tool as _chat_tool
     from xai_sdk.chat import tool_result as _chat_tool_result
     from xai_sdk.chat import user as _chat_user
+    from xai_sdk.chat import SearchParameters as _chat_search_parameters
 except ImportError as exc:  # pragma: no cover - surfaced during initialise()
     _XAI_IMPORT_ERROR: Optional[Exception] = exc
 else:  # pragma: no cover - simple assignment
@@ -66,6 +71,39 @@ class _PendingToolCall:
     event: threading.Event = field(default_factory=threading.Event)
     content: List[dict] | None = None
     is_error: bool = False
+
+
+class _HtmlStripper(HTMLParser):
+    """Minimal HTML to text converter used for web fetch responses."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._chunks: List[str] = []
+
+    def handle_data(self, data: str) -> None:  # pragma: no cover - parser callback
+        if data:
+            self._chunks.append(data)
+
+    def get_text(self) -> str:
+        return " ".join(self._chunks)
+
+
+def _strip_html(content: str) -> str:
+    stripper = _HtmlStripper()
+    try:
+        stripper.feed(content)
+    finally:
+        stripper.close()
+    return stripper.get_text()
+
+
+MAX_FETCH_BYTES = 200_000
+
+
+def _count_occurrences(haystack: str, needle: str) -> int:
+    if not needle:
+        return 0
+    return haystack.count(needle)
 
 
 class GrokService:
@@ -234,6 +272,302 @@ class GrokService:
                     ) or None
 
         return stream(), result
+
+    # ------------------------------------------------------------------
+    # Tooling helpers
+    # ------------------------------------------------------------------
+    def web_search(
+        self,
+        *,
+        query: str,
+        mode: str = "on",
+        max_tokens: int | None = None,
+    ) -> dict:
+        self._ensure_ready()
+        trimmed = (query or "").strip()
+        if not trimmed:
+            return {
+                "llmContent": "No query provided for web search.",
+                "returnDisplay": "No search executed.",
+                "error": {"message": "Query cannot be empty."},
+            }
+
+        search_params = _chat_search_parameters(mode=mode or "on")
+        user_message = self._message_builder("user")(trimmed)
+
+        try:
+            chat = self._client.chat.create(
+                model=self._config.get("model"),
+                messages=[user_message],
+                search_parameters=search_params,
+                max_tokens=max_tokens or 512,
+            )
+            response = chat.sample()
+        except Exception as exc:  # pragma: no cover - dependency failure
+            raise GrokServiceError(f"Web search failed: {exc}") from exc
+
+        text = (response.content or "").strip()
+        citations = list(response.citations or [])
+        if not text:
+            text = f'No search results found for "{trimmed}".'
+            display = "No information found."
+        else:
+            display = f'Search results for "{trimmed}" returned.'
+
+        result: Dict[str, Any] = {
+            "llmContent": text,
+            "returnDisplay": display,
+        }
+        if citations:
+            result["sources"] = citations
+        return result
+
+    def web_fetch(
+        self,
+        *,
+        prompt: str,
+        max_tokens: int | None = None,
+        fetch_timeout: float | None = 10.0,
+    ) -> dict:
+        self._ensure_ready()
+        trimmed = (prompt or "").strip()
+        if not trimmed:
+            return {
+                "llmContent": "No prompt supplied for web fetch.",
+                "returnDisplay": "No web content fetched.",
+                "error": {"message": "Prompt cannot be empty."},
+            }
+
+        urls = re.findall(r"https?://[^\s)]+", trimmed)
+        first_url = urls[0] if urls else None
+        fetched_text: Optional[str] = None
+        fetch_error: Optional[str] = None
+
+        if first_url:
+            candidate = first_url.rstrip('.,)')
+            try:
+                with urllib_request.urlopen(candidate, timeout=fetch_timeout or 10.0) as handle:
+                    raw_bytes = handle.read(MAX_FETCH_BYTES)
+                    charset = handle.headers.get_content_charset() or "utf-8"
+                decoded = raw_bytes.decode(charset, errors="ignore")
+                fetched_text = _strip_html(decoded)
+                first_url = candidate
+            except (URLError, OSError, ValueError) as exc:
+                fetch_error = f"Failed to fetch {candidate}: {exc}"
+
+        summary_prompt_parts: List[str] = []
+        if fetched_text:
+            summary_prompt_parts.append(
+                f"Summarize the following content retrieved from {first_url}:"
+            )
+            summary_prompt_parts.append(fetched_text[:6000])
+        else:
+            summary_prompt_parts.append(
+                "The user requested information that may require browsing the web."
+            )
+            summary_prompt_parts.append(trimmed)
+
+        user_payload = "\n\n".join(summary_prompt_parts)
+        system_prompt = (
+            "You are a helpful assistant that extracts key facts from fetched web content. "
+            "Provide concise, factual summaries."
+        )
+
+        try:
+            chat = self._client.chat.create(
+                model=self._config.get("model"),
+                messages=[
+                    self._message_builder("system")(system_prompt),
+                    self._message_builder("user")(user_payload),
+                ],
+                search_parameters=_chat_search_parameters(mode="on"),
+                max_tokens=max_tokens or 768,
+            )
+            response = chat.sample()
+        except Exception as exc:  # pragma: no cover - dependency failure
+            raise GrokServiceError(f"Web fetch summarisation failed: {exc}") from exc
+
+        summary = (response.content or "").strip()
+        if not summary:
+            summary = "No summary was produced."
+
+        result: Dict[str, Any] = {
+            "llmContent": summary,
+            "returnDisplay": "Fetched content summarised.",
+        }
+        if first_url:
+            result["sources"] = [first_url]
+        if fetch_error:
+            result["error"] = {"message": fetch_error}
+        return result
+
+    def ensure_correct_edit(
+        self,
+        *,
+        filePath: str,
+        currentContent: str,
+        originalParams: Dict[str, Any],
+        instruction: Optional[str] = None,
+        max_tokens: int | None = 512,
+    ) -> dict:
+        self._ensure_ready()
+        params = dict(originalParams or {})
+        occurrences = _count_occurrences(currentContent, params.get("old_string", ""))
+        if occurrences:
+            return {"params": params, "occurrences": occurrences}
+
+        payload = {
+            "filePath": filePath,
+            "currentContentTail": currentContent[-4000:],
+            "originalParams": params,
+            "instruction": instruction or "",
+        }
+
+        try:
+            chat = self._client.chat.create(
+                model=self._config.get("model"),
+                messages=[
+                    self._message_builder("system")(
+                        "You correct failing code edit operations. Return JSON with old_string, new_string, explanation."
+                    ),
+                    self._message_builder("user")(json.dumps(payload, ensure_ascii=False)),
+                ],
+                max_tokens=max_tokens or 512,
+            )
+            response = chat.sample()
+            data = json.loads(response.content)
+        except Exception:
+            data = None
+
+        if isinstance(data, dict):
+            new_old = data.get("old_string")
+            new_new = data.get("new_string")
+            if isinstance(new_old, str) and isinstance(new_new, str):
+                params["old_string"] = new_old
+                params["new_string"] = new_new
+                occurrences = _count_occurrences(currentContent, new_old)
+
+        return {"params": params, "occurrences": occurrences}
+
+    def ensure_correct_file_content(
+        self,
+        *,
+        content: str,
+        max_tokens: int | None = 512,
+    ) -> dict:
+        self._ensure_ready()
+        snippet = content[:8000]
+        if not snippet.strip():
+            return {"content": content}
+
+        try:
+            chat = self._client.chat.create(
+                model=self._config.get("model"),
+                messages=[
+                    self._message_builder("system")(
+                        "Normalise the provided file content, fixing whitespace or newline issues. "
+                        "Return the corrected file exactly."
+                    ),
+                    self._message_builder("user")(snippet),
+                ],
+                max_tokens=max_tokens or 512,
+            )
+            response = chat.sample()
+            normalised = response.content or content
+        except Exception:
+            normalised = content
+
+        if not normalised:
+            normalised = content
+        return {"content": normalised}
+
+    def fix_edit_with_instruction(
+        self,
+        *,
+        instruction: str,
+        oldString: str,
+        newString: str,
+        error: Optional[str] = None,
+        currentContent: Optional[str] = None,
+        max_tokens: int | None = 512,
+    ) -> dict:
+        self._ensure_ready()
+        fallback = {
+            "search": oldString,
+            "replace": newString,
+            "noChangesRequired": False,
+            "explanation": "Unable to adjust edit parameters automatically.",
+        }
+
+        payload = {
+            "instruction": instruction,
+            "oldString": oldString,
+            "newString": newString,
+            "error": error or "",
+            "currentContentTail": (currentContent or "")[-4000:],
+        }
+
+        try:
+            chat = self._client.chat.create(
+                model=self._config.get("model"),
+                messages=[
+                    self._message_builder("system")(
+                        "You repair failed search-and-replace operations. Return JSON with search, replace, noChangesRequired, explanation."
+                    ),
+                    self._message_builder("user")(json.dumps(payload, ensure_ascii=False)),
+                ],
+                max_tokens=max_tokens or 512,
+            )
+            response = chat.sample()
+            data = json.loads(response.content)
+        except Exception:
+            data = None
+
+        if isinstance(data, dict):
+            search_val = data.get("search")
+            replace_val = data.get("replace")
+            if isinstance(search_val, str) and isinstance(replace_val, str):
+                explanation_val = data.get("explanation")
+                no_changes = bool(data.get("noChangesRequired"))
+                fallback = {
+                    "search": search_val,
+                    "replace": replace_val,
+                    "noChangesRequired": no_changes,
+                    "explanation": explanation_val
+                    if isinstance(explanation_val, str)
+                    else fallback["explanation"],
+                }
+
+        return fallback
+
+    def summarize_text(
+        self,
+        *,
+        text: str,
+        max_output_tokens: int | None = 256,
+    ) -> dict:
+        self._ensure_ready()
+        snippet = text[:8000]
+        if not snippet.strip():
+            return {"summary": ""}
+
+        try:
+            chat = self._client.chat.create(
+                model=self._config.get("model"),
+                messages=[
+                    self._message_builder("system")(
+                        "Provide a concise summary of the given text. Focus on key actions and decisions."
+                    ),
+                    self._message_builder("user")(snippet),
+                ],
+                max_tokens=max_output_tokens or 256,
+            )
+            response = chat.sample()
+            summary = (response.content or "").strip()
+        except Exception:
+            summary = snippet[:500]
+
+        return {"summary": summary}
 
     # ------------------------------------------------------------------
     # Uploads / collections

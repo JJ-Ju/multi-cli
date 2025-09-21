@@ -74,6 +74,7 @@ import type { UserTierId } from '../code_assist/types.js';
 import { ProxyAgent, setGlobalDispatcher } from 'undici';
 import { ModelProviderRegistryImpl } from '../providers/modelProviderRegistry.js';
 import type { ModelProvider, ProviderRegistry } from '../providers/types.js';
+import type { ModelToolingSupport } from '../providers/modelToolingSupport.js';
 
 export enum ApprovalMode {
   DEFAULT = 'default',
@@ -282,6 +283,7 @@ export class Config {
   private readonly usageStatisticsEnabled: boolean;
   private geminiClient!: GeminiClient;
   private baseLlmClient!: BaseLlmClient;
+  private toolingSupport!: ModelToolingSupport;
   private readonly providerAuthTypeCache = new Map<
     string,
     AuthType | undefined
@@ -472,6 +474,11 @@ export class Config {
       setGlobalDispatcher(new ProxyAgent(this.getProxy() as string));
     }
     this.geminiClient = this.modelProvider.createConversationClient(this);
+    this.toolingSupport = this.modelProvider.createToolingSupport(this, {
+      conversationClient: this.geminiClient,
+      contentGenerator: this.contentGenerator,
+      baseLlmClient: this.baseLlmClient,
+    });
     this.modelRouterService = new ModelRouterService(this);
   }
 
@@ -538,6 +545,7 @@ export class Config {
     const previousContentGeneratorConfig = this.contentGeneratorConfig;
     const previousContentGenerator = this.contentGenerator;
     const previousBaseLlmClient = this.baseLlmClient;
+    const previousToolingSupport = this.toolingSupport;
     const previousModel = this.model;
 
     if (previousContentGeneratorConfig) {
@@ -557,6 +565,7 @@ export class Config {
     let newContentGeneratorConfig: ContentGeneratorConfig | undefined;
     let newContentGenerator: ContentGenerator | undefined;
     let newBaseLlmClient: BaseLlmClient | undefined;
+    let newToolingSupport: ModelToolingSupport | undefined;
 
     try {
       const cachedAuthType = this.providerAuthTypeCache.get(provider.id);
@@ -577,6 +586,12 @@ export class Config {
         );
         newBaseLlmClient = new BaseLlmClient(newContentGenerator, this);
       }
+
+      newToolingSupport = this.modelProvider.createToolingSupport(this, {
+        conversationClient: newConversationClient,
+        contentGenerator: newContentGenerator ?? this.contentGenerator,
+        baseLlmClient: newBaseLlmClient ?? this.baseLlmClient,
+      });
     } catch (error) {
       this.modelProvider = previousProvider;
       this.geminiClient = previousGeminiClient;
@@ -587,6 +602,7 @@ export class Config {
       if (previousBaseLlmClient) {
         this.baseLlmClient = previousBaseLlmClient;
       }
+      this.toolingSupport = previousToolingSupport;
       this.model = previousModel;
       throw error;
     }
@@ -603,6 +619,9 @@ export class Config {
     }
     if (newBaseLlmClient) {
       this.baseLlmClient = newBaseLlmClient;
+    }
+    if (newToolingSupport) {
+      this.toolingSupport = newToolingSupport;
     }
 
     this.geminiClient = newConversationClient;
@@ -881,6 +900,10 @@ export class Config {
 
   getGeminiClient(): GeminiClient {
     return this.geminiClient;
+  }
+
+  getToolingSupport(): ModelToolingSupport {
+    return this.toolingSupport;
   }
 
   getModelRouterService(): ModelRouterService {

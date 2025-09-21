@@ -18,40 +18,13 @@ import {
 import { ToolErrorType } from './tool-error.js';
 import { getErrorMessage } from '../utils/errors.js';
 import type { Config } from '../config/config.js';
-import { ApprovalMode, DEFAULT_GEMINI_FLASH_MODEL } from '../config/config.js';
-import { getResponseText } from '../utils/partUtils.js';
-import { fetchWithTimeout, isPrivateIp } from '../utils/fetch.js';
-import { convert } from 'html-to-text';
+import { ApprovalMode } from '../config/config.js';
 import { ProxyAgent, setGlobalDispatcher } from 'undici';
-
-const URL_FETCH_TIMEOUT_MS = 10000;
-const MAX_CONTENT_LENGTH = 100000;
 
 // Helper function to extract URLs from a string
 function extractUrls(text: string): string[] {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   return text.match(urlRegex) || [];
-}
-
-// Interfaces for grounding metadata (similar to web-search.ts)
-interface GroundingChunkWeb {
-  uri?: string;
-  title?: string;
-}
-
-interface GroundingChunkItem {
-  web?: GroundingChunkWeb;
-}
-
-interface GroundingSupportSegment {
-  startIndex: number;
-  endIndex: number;
-  text?: string;
-}
-
-interface GroundingSupportItem {
-  segment?: GroundingSupportSegment;
-  groundingChunkIndices?: number[];
 }
 
 /**
@@ -73,68 +46,6 @@ class WebFetchToolInvocation extends BaseToolInvocation<
     params: WebFetchToolParams,
   ) {
     super(params);
-  }
-
-  private async executeFallback(signal: AbortSignal): Promise<ToolResult> {
-    const urls = extractUrls(this.params.prompt);
-    // For now, we only support one URL for fallback
-    let url = urls[0];
-
-    // Convert GitHub blob URL to raw URL
-    if (url.includes('github.com') && url.includes('/blob/')) {
-      url = url
-        .replace('github.com', 'raw.githubusercontent.com')
-        .replace('/blob/', '/');
-    }
-
-    try {
-      const response = await fetchWithTimeout(url, URL_FETCH_TIMEOUT_MS);
-      if (!response.ok) {
-        throw new Error(
-          `Request failed with status code ${response.status} ${response.statusText}`,
-        );
-      }
-      const html = await response.text();
-      const textContent = convert(html, {
-        wordwrap: false,
-        selectors: [
-          { selector: 'a', options: { ignoreHref: true } },
-          { selector: 'img', format: 'skip' },
-        ],
-      }).substring(0, MAX_CONTENT_LENGTH);
-
-      const geminiClient = this.config.getGeminiClient();
-      const fallbackPrompt = `The user requested the following: "${this.params.prompt}".
-
-I was unable to access the URL directly. Instead, I have fetched the raw content of the page. Please use the following content to answer the request. Do not attempt to access the URL again.
-
----
-${textContent}
----
-`;
-      const result = await geminiClient.generateContent(
-        [{ role: 'user', parts: [{ text: fallbackPrompt }] }],
-        {},
-        signal,
-        DEFAULT_GEMINI_FLASH_MODEL,
-      );
-      const resultText = getResponseText(result) || '';
-      return {
-        llmContent: resultText,
-        returnDisplay: `Content for ${url} processed using fallback fetch.`,
-      };
-    } catch (e) {
-      const error = e as Error;
-      const errorMessage = `Error during fallback fetch for ${url}: ${error.message}`;
-      return {
-        llmContent: `Error: ${errorMessage}`,
-        returnDisplay: `Error: ${errorMessage}`,
-        error: {
-          message: errorMessage,
-          type: ToolErrorType.WEB_FETCH_FALLBACK_FAILED,
-        },
-      };
-    }
   }
 
   getDescription(): string {
@@ -178,125 +89,12 @@ ${textContent}
   }
 
   async execute(signal: AbortSignal): Promise<ToolResult> {
-    const userPrompt = this.params.prompt;
-    const urls = extractUrls(userPrompt);
-    const url = urls[0];
-    const isPrivate = isPrivateIp(url);
-
-    if (isPrivate) {
-      return this.executeFallback(signal);
-    }
-
-    const geminiClient = this.config.getGeminiClient();
-
     try {
-      const response = await geminiClient.generateContent(
-        [{ role: 'user', parts: [{ text: userPrompt }] }],
-        { tools: [{ urlContext: {} }] },
-        signal, // Pass signal
-        DEFAULT_GEMINI_FLASH_MODEL,
-      );
-
-      console.debug(
-        `[WebFetchTool] Full response for prompt "${userPrompt.substring(
-          0,
-          50,
-        )}...":`,
-        JSON.stringify(response, null, 2),
-      );
-
-      let responseText = getResponseText(response) || '';
-      const urlContextMeta = response.candidates?.[0]?.urlContextMetadata;
-      const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
-      const sources = groundingMetadata?.groundingChunks as
-        | GroundingChunkItem[]
-        | undefined;
-      const groundingSupports = groundingMetadata?.groundingSupports as
-        | GroundingSupportItem[]
-        | undefined;
-
-      // Error Handling
-      let processingError = false;
-
-      if (
-        urlContextMeta?.urlMetadata &&
-        urlContextMeta.urlMetadata.length > 0
-      ) {
-        const allStatuses = urlContextMeta.urlMetadata.map(
-          (m) => m.urlRetrievalStatus,
-        );
-        if (allStatuses.every((s) => s !== 'URL_RETRIEVAL_STATUS_SUCCESS')) {
-          processingError = true;
-        }
-      } else if (!responseText.trim() && !sources?.length) {
-        // No URL metadata and no content/sources
-        processingError = true;
-      }
-
-      if (
-        !processingError &&
-        !responseText.trim() &&
-        (!sources || sources.length === 0)
-      ) {
-        // Successfully retrieved some URL (or no specific error from urlContextMeta), but no usable text or grounding data.
-        processingError = true;
-      }
-
-      if (processingError) {
-        return this.executeFallback(signal);
-      }
-
-      const sourceListFormatted: string[] = [];
-      if (sources && sources.length > 0) {
-        sources.forEach((source: GroundingChunkItem, index: number) => {
-          const title = source.web?.title || 'Untitled';
-          const uri = source.web?.uri || 'Unknown URI'; // Fallback if URI is missing
-          sourceListFormatted.push(`[${index + 1}] ${title} (${uri})`);
-        });
-
-        if (groundingSupports && groundingSupports.length > 0) {
-          const insertions: Array<{ index: number; marker: string }> = [];
-          groundingSupports.forEach((support: GroundingSupportItem) => {
-            if (support.segment && support.groundingChunkIndices) {
-              const citationMarker = support.groundingChunkIndices
-                .map((chunkIndex: number) => `[${chunkIndex + 1}]`)
-                .join('');
-              insertions.push({
-                index: support.segment.endIndex,
-                marker: citationMarker,
-              });
-            }
-          });
-
-          insertions.sort((a, b) => b.index - a.index);
-          const responseChars = responseText.split('');
-          insertions.forEach((insertion) => {
-            responseChars.splice(insertion.index, 0, insertion.marker);
-          });
-          responseText = responseChars.join('');
-        }
-
-        if (sourceListFormatted.length > 0) {
-          responseText += `
-
-Sources:
-${sourceListFormatted.join('\n')}`;
-        }
-      }
-
-      const llmContent = responseText;
-
-      console.debug(
-        `[WebFetchTool] Formatted tool response for prompt "${userPrompt}:\n\n":`,
-        llmContent,
-      );
-
-      return {
-        llmContent,
-        returnDisplay: `Content processed from prompt.`,
-      };
+      return await this.config
+        .getToolingSupport()
+        .performWebFetch(this.params.prompt, signal);
     } catch (error: unknown) {
-      const errorMessage = `Error processing web content for prompt "${userPrompt.substring(
+      const errorMessage = `Error processing web content for prompt "${this.params.prompt.substring(
         0,
         50,
       )}...": ${getErrorMessage(error)}`;

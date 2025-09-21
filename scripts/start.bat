@@ -26,10 +26,8 @@ if "%GROK_PYTHON_BIN%"=="" (
 call :load_env "%REPO_ROOT%\.env"
 call :load_env "%SIDECAR_DIR%\.env"
 
-pushd "%REPO_ROOT%"
-  echo [start] Starting CLI (npm run start)
-  npm run start
-popd
+echo [start] Starting CLI via scripts\start.js
+node "%REPO_ROOT%\scripts\start.js"
 exit /b %errorlevel%
 
 :load_env

@@ -36,7 +36,7 @@ import { ExtensionEnablementManager } from './extensions/extensionEnablement.js'
 export const EXTENSIONS_DIRECTORY_NAME = path.join(GEMINI_DIR, 'extensions');
 
 export const EXTENSIONS_CONFIG_FILENAME = 'gemini-extension.json';
-export const INSTALL_METADATA_FILENAME = '.gemini-extension-install.json';
+export const INSTALL_METADATA_FILENAME = '.ionesco-extension-install.json';
 
 export interface Extension {
   path: string;

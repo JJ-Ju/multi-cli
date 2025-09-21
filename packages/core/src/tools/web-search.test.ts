@@ -4,30 +4,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Mock } from 'vitest';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { WebSearchToolParams } from './web-search.js';
 import { WebSearchTool } from './web-search.js';
 import type { Config } from '../config/config.js';
-import { GeminiClient } from '../core/client.js';
 import { ToolErrorType } from './tool-error.js';
-
-// Mock GeminiClient and Config constructor
-vi.mock('../core/client.js');
-vi.mock('../config/config.js');
 
 describe('WebSearchTool', () => {
   const abortSignal = new AbortController().signal;
-  let mockGeminiClient: GeminiClient;
   let tool: WebSearchTool;
+  let mockConfig: Config;
+  let mockToolingSupport: {
+    performWebSearch: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
-    const mockConfigInstance = {
-      getGeminiClient: () => mockGeminiClient,
+    mockToolingSupport = {
+      performWebSearch: vi.fn(),
+    };
+
+    mockConfig = {
+      getToolingSupport: vi.fn(() => mockToolingSupport),
       getProxy: () => undefined,
     } as unknown as Config;
-    mockGeminiClient = new GeminiClient(mockConfigInstance);
-    tool = new WebSearchTool(mockConfigInstance);
+
+    tool = new WebSearchTool(mockConfig);
   });
 
   afterEach(() => {
@@ -35,21 +36,21 @@ describe('WebSearchTool', () => {
   });
 
   describe('build', () => {
-    it('should return an invocation for a valid query', () => {
+    it('returns an invocation for a valid query', () => {
       const params: WebSearchToolParams = { query: 'test query' };
       const invocation = tool.build(params);
       expect(invocation).toBeDefined();
       expect(invocation.params).toEqual(params);
     });
 
-    it('should throw an error for an empty query', () => {
+    it('throws for an empty query', () => {
       const params: WebSearchToolParams = { query: '' };
       expect(() => tool.build(params)).toThrow(
         "The 'query' parameter cannot be empty.",
       );
     });
 
-    it('should throw an error for a query with only whitespace', () => {
+    it('throws for a whitespace-only query', () => {
       const params: WebSearchToolParams = { query: '   ' };
       expect(() => tool.build(params)).toThrow(
         "The 'query' parameter cannot be empty.",
@@ -58,67 +59,40 @@ describe('WebSearchTool', () => {
   });
 
   describe('getDescription', () => {
-    it('should return a description of the search', () => {
-      const params: WebSearchToolParams = { query: 'test query' };
+    it('describes the query being executed', () => {
+      const params: WebSearchToolParams = { query: 'describe me' };
       const invocation = tool.build(params);
       expect(invocation.getDescription()).toBe(
-        'Searching the web for: "test query"',
+        'Searching the web for: "describe me"',
       );
     });
   });
 
   describe('execute', () => {
-    it('should return search results for a successful query', async () => {
+    it('delegates to tooling support and returns its result', async () => {
       const params: WebSearchToolParams = { query: 'successful query' };
-      (mockGeminiClient.generateContent as Mock).mockResolvedValue({
-        candidates: [
-          {
-            content: {
-              role: 'model',
-              parts: [{ text: 'Here are your results.' }],
-            },
-          },
-        ],
-      });
+      const adapterResult = {
+        llmContent: 'results',
+        returnDisplay: 'display',
+        sources: [{ web: { uri: 'https://example.com' } }],
+      };
+      mockToolingSupport.performWebSearch.mockResolvedValue(adapterResult);
 
       const invocation = tool.build(params);
       const result = await invocation.execute(abortSignal);
 
-      expect(result.llmContent).toBe(
-        'Web search results for "successful query":\n\nHere are your results.',
+      expect(mockToolingSupport.performWebSearch).toHaveBeenCalledWith(
+        'successful query',
+        abortSignal,
       );
-      expect(result.returnDisplay).toBe(
-        'Search results for "successful query" returned.',
-      );
-      expect(result.sources).toBeUndefined();
+      expect(result).toEqual(adapterResult);
     });
 
-    it('should handle no search results found', async () => {
-      const params: WebSearchToolParams = { query: 'no results query' };
-      (mockGeminiClient.generateContent as Mock).mockResolvedValue({
-        candidates: [
-          {
-            content: {
-              role: 'model',
-              parts: [{ text: '' }],
-            },
-          },
-        ],
-      });
-
-      const invocation = tool.build(params);
-      const result = await invocation.execute(abortSignal);
-
-      expect(result.llmContent).toBe(
-        'No search results or information found for query: "no results query"',
-      );
-      expect(result.returnDisplay).toBe('No information found.');
-    });
-
-    it('should return a WEB_SEARCH_FAILED error on failure', async () => {
+    it('handles errors from tooling support', async () => {
       const params: WebSearchToolParams = { query: 'error query' };
-      const testError = new Error('API Failure');
-      (mockGeminiClient.generateContent as Mock).mockRejectedValue(testError);
+      mockToolingSupport.performWebSearch.mockRejectedValue(
+        new Error('API Failure'),
+      );
 
       const invocation = tool.build(params);
       const result = await invocation.execute(abortSignal);
@@ -127,125 +101,6 @@ describe('WebSearchTool', () => {
       expect(result.llmContent).toContain('Error:');
       expect(result.llmContent).toContain('API Failure');
       expect(result.returnDisplay).toBe('Error performing web search.');
-    });
-
-    it('should correctly format results with sources and citations', async () => {
-      const params: WebSearchToolParams = { query: 'grounding query' };
-      (mockGeminiClient.generateContent as Mock).mockResolvedValue({
-        candidates: [
-          {
-            content: {
-              role: 'model',
-              parts: [{ text: 'This is a test response.' }],
-            },
-            groundingMetadata: {
-              groundingChunks: [
-                { web: { uri: 'https://example.com', title: 'Example Site' } },
-                { web: { uri: 'https://google.com', title: 'Google' } },
-              ],
-              groundingSupports: [
-                {
-                  segment: { startIndex: 5, endIndex: 14 },
-                  groundingChunkIndices: [0],
-                },
-                {
-                  segment: { startIndex: 15, endIndex: 24 },
-                  groundingChunkIndices: [0, 1],
-                },
-              ],
-            },
-          },
-        ],
-      });
-
-      const invocation = tool.build(params);
-      const result = await invocation.execute(abortSignal);
-
-      const expectedLlmContent = `Web search results for "grounding query":
-
-This is a test[1] response.[1][2]
-
-Sources:
-[1] Example Site (https://example.com)
-[2] Google (https://google.com)`;
-
-      expect(result.llmContent).toBe(expectedLlmContent);
-      expect(result.returnDisplay).toBe(
-        'Search results for "grounding query" returned.',
-      );
-      expect(result.sources).toHaveLength(2);
-    });
-
-    it('should insert markers at correct byte positions for multibyte text', async () => {
-      const params: WebSearchToolParams = { query: 'multibyte query' };
-      (mockGeminiClient.generateContent as Mock).mockResolvedValue({
-        candidates: [
-          {
-            content: {
-              role: 'model',
-              parts: [{ text: 'こんにちは! Gemini CLI✨️' }],
-            },
-            groundingMetadata: {
-              groundingChunks: [
-                {
-                  web: {
-                    title: 'Japanese Greeting',
-                    uri: 'https://example.test/japanese-greeting',
-                  },
-                },
-                {
-                  web: {
-                    title: 'google-gemini/gemini-cli',
-                    uri: 'https://github.com/google-gemini/gemini-cli',
-                  },
-                },
-                {
-                  web: {
-                    title: 'Gemini CLI: your open-source AI agent',
-                    uri: 'https://blog.google/technology/developers/introducing-gemini-cli-open-source-ai-agent/',
-                  },
-                },
-              ],
-              groundingSupports: [
-                {
-                  segment: {
-                    // Byte range of "こんにちは!" (utf-8 encoded)
-                    startIndex: 0,
-                    endIndex: 16,
-                  },
-                  groundingChunkIndices: [0],
-                },
-                {
-                  segment: {
-                    // Byte range of "Gemini CLI✨️" (utf-8 encoded)
-                    startIndex: 17,
-                    endIndex: 33,
-                  },
-                  groundingChunkIndices: [1, 2],
-                },
-              ],
-            },
-          },
-        ],
-      });
-
-      const invocation = tool.build(params);
-      const result = await invocation.execute(abortSignal);
-
-      const expectedLlmContent = `Web search results for "multibyte query":
-
-こんにちは![1] Gemini CLI✨️[2][3]
-
-Sources:
-[1] Japanese Greeting (https://example.test/japanese-greeting)
-[2] google-gemini/gemini-cli (https://github.com/google-gemini/gemini-cli)
-[3] Gemini CLI: your open-source AI agent (https://blog.google/technology/developers/introducing-gemini-cli-open-source-ai-agent/)`;
-
-      expect(result.llmContent).toBe(expectedLlmContent);
-      expect(result.returnDisplay).toBe(
-        'Search results for "multibyte query" returned.',
-      );
-      expect(result.sources).toHaveLength(3);
     });
   });
 });

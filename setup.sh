@@ -5,7 +5,7 @@ set -euo pipefail
 
 SCRIPT_SOURCE="${BASH_SOURCE[0]}"
 SCRIPT_DIR="$(cd -- "$(dirname "$SCRIPT_SOURCE")" && pwd)"
-REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="${SCRIPT_DIR}"
 SIDECAR_DIR="${REPO_ROOT}/providers/grok_sidecar"
 VENV_DIR="${SIDECAR_DIR}/.venv"
 REQ_FILE="${SIDECAR_DIR}/requirements.txt"
@@ -111,7 +111,7 @@ log "and run the CLI via npm scripts as needed."
 # ---------------------------------------------------------------------------
 # Offer global ionesco alias for convenience
 # ---------------------------------------------------------------------------
-PROJECT_BIN="${REPO_ROOT}/scripts/start.sh"
+PROJECT_BIN="${REPO_ROOT}/start.sh"
 if [[ -n "${SHELL:-}" ]] && [[ "${SHELL}" == *"/bash" || "${SHELL}" == *"/zsh" ]]; then
   SHELL_RC="${HOME}/.$(basename "${SHELL}")rc"
   if [[ -f "${SHELL_RC}" ]]; then
@@ -124,5 +124,5 @@ if [[ -n "${SHELL:-}" ]] && [[ "${SHELL}" == *"/bash" || "${SHELL}" == *"/zsh" ]
     fi
   fi
 else
-  log "Skipped alias setup (unsupported shell). Run ./scripts/create_alias.sh manually if desired."
+  log "Skipped alias setup (unsupported shell). Run ./set-ionesco-alias.sh manually if desired."
 fi

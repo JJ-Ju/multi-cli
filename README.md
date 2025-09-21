@@ -38,13 +38,13 @@ The default configuration continues to use Google's Gemini models. Configure API
 
 Ionesco CLI ships with an experimental Grok provider backed by the Python sidecar under `providers/grok_sidecar/`.
 
-1. Run `./scripts/setup.sh` (or `scripts\setup.bat` on Windows) to create the sidecar virtualenv and install dependencies.
+1. Run `./setup.sh` (or `scripts\setup.bat` on Windows) to create the sidecar virtualenv and install dependencies.
 2. Copy `providers/grok_sidecar/.env.example` to `.env` and add:
    ```bash
    GROK_API_KEY=your_api_key
    GROK_MODEL=your_preferred_model_id   # optional; defaults to grok-4-fast-reasoning-latest
    ```
-3. Launch the CLI (`./scripts/start.sh` or `scripts\start.bat`).
+3. Launch the CLI (`./start.sh` or `scripts\start.bat`).
 4. Switch providers inside the session:
    ```
    /agent list          # show available providers
@@ -91,7 +91,7 @@ Choose the authentication method that best fits your needs:
 #### Start Ionesco CLI, then choose _Login with Google_ and follow the browser authentication flow when prompted
 
 ```bash
-./scripts/start.sh
+./start.sh
 ```
 
 #### If you are using a paid Code Assist License from your organization, remember to set the Google Cloud Project
@@ -99,7 +99,7 @@ Choose the authentication method that best fits your needs:
 ```bash
 # Set your Google Cloud Project
 export GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_NAME"
-./scripts/start.sh
+./start.sh
 ```
 
 ### Option 2: Gemini API Key
@@ -115,7 +115,7 @@ export GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_NAME"
 ```bash
 # Get your key from https://aistudio.google.com/apikey
 export GEMINI_API_KEY="YOUR_API_KEY"
-./scripts/start.sh
+./start.sh
 ```
 
 ### Option 3: Vertex AI
@@ -132,7 +132,7 @@ export GEMINI_API_KEY="YOUR_API_KEY"
 # Get your key from Google Cloud Console
 export GOOGLE_API_KEY="YOUR_API_KEY"
 export GOOGLE_GENAI_USE_VERTEXAI=true
-./scripts/start.sh
+./start.sh
 ```
 
 For Google Workspace accounts and other authentication methods, see the [authentication guide](./docs/cli/authentication.md).
@@ -148,10 +148,10 @@ cd ionesco-cli
 
 # Install Node dependencies and prime the Grok sidecar
 npm install
-./scripts/setup.sh
+./setup.sh
 
 # Launch the CLI (use scripts\start.bat on Windows)
-./scripts/start.sh
+./start.sh
 ```
 
 > Tip: run `./scripts/create_alias.sh` to expose a `gemini` shell alias for
@@ -162,7 +162,7 @@ npm install
 #### Start in current directory
 
 ```bash
-./scripts/start.sh
+./start.sh
 ```
 
 #### Include multiple directories
@@ -202,7 +202,7 @@ Inside the running session, `/agent list` shows available providers and `/agent 
 
 ```bash
 cd new-project/
-./scripts/start.sh
+./start.sh
 > Write me a Discord bot that answers questions using a FAQ.md file I will provide
 ```
 
@@ -211,7 +211,7 @@ cd new-project/
 ```bash
 git clone https://github.com/your-org/ionesco-cli.git
 cd ionesco-cli
-./scripts/start.sh
+./start.sh
 > Give me a summary of all of the changes that went in yesterday
 ```
 
@@ -254,7 +254,7 @@ cd ionesco-cli
 
 - [**Settings Reference**](./docs/cli/configuration.md) - All configuration options
 - [**Theme Customization**](./docs/cli/themes.md) - Visual customization
-- [**.gemini Directory**](./docs/gemini-ignore.md) - Project-specific settings
+- [**.ionesco Directory**](./docs/gemini-ignore.md) - Project-specific settings
 - [**Environment Variables**](./docs/cli/configuration.md#environment-variables)
 
 ### Troubleshooting & Support
@@ -265,7 +265,7 @@ cd ionesco-cli
 
 ### Using MCP Servers
 
-Configure MCP servers in `~/.gemini/settings.json` to extend Ionesco CLI with custom tools:
+Configure MCP servers in `~/.ionesco/settings.json` to extend Ionesco CLI with custom tools:
 
 ```text
 > @github List my open pull requests

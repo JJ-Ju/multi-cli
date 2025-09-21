@@ -18,10 +18,6 @@ vi.mock('../ide/ide-client.js', () => ({
   },
 }));
 
-vi.mock('../utils/llm-edit-fixer.js', () => ({
-  FixLLMEditWithInstruction: mockFixLLMEditWithInstruction,
-}));
-
 vi.mock('../core/client.js', () => ({
   GeminiClient: vi.fn().mockImplementation(() => ({
     generateJson: mockGenerateJson,
@@ -65,6 +61,14 @@ describe('SmartEditTool', () => {
   let mockConfig: Config;
   let geminiClient: any;
   let baseLlmClient: BaseLlmClient;
+  let mockToolingSupport: {
+    ensureCorrectEdit: ReturnType<typeof vi.fn>;
+    ensureCorrectFileContent: ReturnType<typeof vi.fn>;
+    performWebSearch: ReturnType<typeof vi.fn>;
+    performWebFetch: ReturnType<typeof vi.fn>;
+    fixEditWithInstruction: ReturnType<typeof mockFixLLMEditWithInstruction>;
+    summarizeText: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -79,6 +83,15 @@ describe('SmartEditTool', () => {
     baseLlmClient = {
       generateJson: mockGenerateJson,
     } as unknown as BaseLlmClient;
+
+    mockToolingSupport = {
+      ensureCorrectEdit: vi.fn(),
+      ensureCorrectFileContent: vi.fn(),
+      performWebSearch: vi.fn(),
+      performWebFetch: vi.fn(),
+      fixEditWithInstruction: mockFixLLMEditWithInstruction,
+      summarizeText: vi.fn(),
+    };
 
     mockConfig = {
       getGeminiClient: vi.fn().mockReturnValue(geminiClient),
@@ -105,7 +118,10 @@ describe('SmartEditTool', () => {
       getGeminiMdFileCount: () => 0,
       setGeminiMdFileCount: vi.fn(),
       getToolRegistry: () => ({}) as any,
+      getToolingSupport: vi.fn(),
     } as unknown as Config;
+
+    (mockConfig.getToolingSupport as Mock).mockReturnValue(mockToolingSupport);
 
     (mockConfig.getApprovalMode as Mock).mockClear();
     (mockConfig.getApprovalMode as Mock).mockReturnValue(ApprovalMode.DEFAULT);

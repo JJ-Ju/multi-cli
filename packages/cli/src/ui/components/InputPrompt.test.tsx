@@ -445,7 +445,7 @@ describe('InputPrompt', () => {
     it('should insert image path at cursor position with proper spacing', async () => {
       const imagePath = path.join(
         'test',
-        '.gemini-clipboard',
+        '.ionesco-clipboard',
         'clipboard-456.png',
       );
       vi.mocked(clipboardUtils.clipboardHasImage).mockResolvedValue(true);

@@ -31,10 +31,10 @@ Ionesco CLI uses JSON settings files for persistent configuration. There are fou
   - **Location:** `/etc/gemini-cli/system-defaults.json` (Linux), `C:\ProgramData\gemini-cli\system-defaults.json` (Windows) or `/Library/Application Support/GeminiCli/system-defaults.json` (macOS). The path can be overridden using the `GEMINI_CLI_SYSTEM_DEFAULTS_PATH` environment variable.
   - **Scope:** Provides a base layer of system-wide default settings. These settings have the lowest precedence and are intended to be overridden by user, project, or system override settings.
 - **User settings file:**
-  - **Location:** `~/.gemini/settings.json` (where `~` is your home directory).
+  - **Location:** `~/.ionesco/settings.json` (where `~` is your home directory).
   - **Scope:** Applies to all Ionesco CLI sessions for the current user. User settings override system defaults.
 - **Project settings file:**
-  - **Location:** `.gemini/settings.json` within your project's root directory.
+  - **Location:** `.ionesco/settings.json` within your project's root directory.
   - **Scope:** Applies only when running Ionesco CLI from that specific project. Project settings override user settings and system defaults.
 - **System settings file:**
   - **Location:** `/etc/gemini-cli/settings.json` (Linux), `C:\ProgramData\gemini-cli\settings.json` (Windows) or `/Library/Application Support/GeminiCli/settings.json` (macOS). The path can be overridden using the `GEMINI_CLI_SYSTEM_SETTINGS_PATH` environment variable.
@@ -44,11 +44,11 @@ Ionesco CLI uses JSON settings files for persistent configuration. There are fou
 
 > **Note for Enterprise Users:** For guidance on deploying and managing Ionesco CLI in a corporate environment, please see the [Enterprise Configuration](./enterprise.md) documentation.
 
-### The `.gemini` directory in your project
+### The `.ionesco` directory in your project
 
-In addition to a project settings file, a project's `.gemini` directory can contain other project-specific files related to Ionesco CLI's operation, such as:
+In addition to a project settings file, a project's `.ionesco` directory can contain other project-specific files related to Ionesco CLI's operation, such as:
 
-- [Custom sandbox profiles](#sandboxing) (e.g., `.gemini/sandbox-macos-custom.sb`, `.gemini/sandbox.Dockerfile`).
+- [Custom sandbox profiles](#sandboxing) (e.g., `.ionesco/sandbox-macos-custom.sb`, `.ionesco/sandbox.Dockerfile`).
 
 ### Available settings in `settings.json`
 
@@ -376,7 +376,7 @@ Here is an example of a `settings.json` file with the nested structure, new as o
 
 The CLI keeps a history of shell commands you run. To avoid conflicts between different projects, this history is stored in a project-specific directory within your user's home folder.
 
-- **Location:** `~/.gemini/tmp/<project_hash>/shell_history`
+- **Location:** `~/.ionesco/tmp/<project_hash>/shell_history`
   - `<project_hash>` is a unique identifier generated from your project's root path.
   - The history is stored in a file named `shell_history`.
 
@@ -390,7 +390,7 @@ The CLI automatically loads environment variables from an `.env` file. The loadi
 2.  If not found, it searches upwards in parent directories until it finds an `.env` file or reaches the project root (identified by a `.git` folder) or the home directory.
 3.  If still not found, it looks for `~/.env` (in the user's home directory).
 
-**Environment Variable Exclusion:** Some environment variables (like `DEBUG` and `DEBUG_MODE`) are automatically excluded from being loaded from project `.env` files to prevent interference with gemini-cli behavior. Variables from `.gemini/.env` files are never excluded. You can customize this behavior using the `advanced.excludedEnvVars` setting in your `settings.json` file.
+**Environment Variable Exclusion:** Some environment variables (like `DEBUG` and `DEBUG_MODE`) are automatically excluded from being loaded from project `.env` files to prevent interference with gemini-cli behavior. Variables from `.ionesco/.env` files are never excluded. You can customize this behavior using the `advanced.excludedEnvVars` setting in your `settings.json` file.
 
 - **`GEMINI_API_KEY`**:
   - Your API key for the Gemini API.
@@ -437,10 +437,10 @@ The CLI automatically loads environment variables from an `.env` file. The loadi
   - Switches the Seatbelt (`sandbox-exec`) profile on macOS.
   - `permissive-open`: (Default) Restricts writes to the project folder (and a few other folders, see `packages/cli/src/utils/sandbox-macos-permissive-open.sb`) but allows other operations.
   - `strict`: Uses a strict profile that declines operations by default.
-  - `<profile_name>`: Uses a custom profile. To define a custom profile, create a file named `sandbox-macos-<profile_name>.sb` in your project's `.gemini/` directory (e.g., `my-project/.gemini/sandbox-macos-custom.sb`).
+  - `<profile_name>`: Uses a custom profile. To define a custom profile, create a file named `sandbox-macos-<profile_name>.sb` in your project's `.ionesco/` directory (e.g., `my-project/.ionesco/sandbox-macos-custom.sb`).
 - **`DEBUG` or `DEBUG_MODE`** (often used by underlying libraries or the CLI itself):
   - Set to `true` or `1` to enable verbose debug logging, which can be helpful for troubleshooting.
-  - **Note:** These variables are automatically excluded from project `.env` files by default to prevent interference with gemini-cli behavior. Use `.gemini/.env` files if you need to set these for gemini-cli specifically.
+  - **Note:** These variables are automatically excluded from project `.env` files by default to prevent interference with gemini-cli behavior. Use `.ionesco/.env` files if you need to set these for gemini-cli specifically.
 - **`NO_COLOR`**:
   - Set to any value to disable all color output in the CLI.
 - **`CLI_TITLE`**:
@@ -568,7 +568,7 @@ This example demonstrates how you can provide general project context, specific 
 
 - **Hierarchical Loading and Precedence:** The CLI implements a sophisticated hierarchical memory system by loading context files (e.g., `GEMINI.md`) from several locations. Content from files lower in this list (more specific) typically overrides or supplements content from files higher up (more general). The exact concatenation order and final context can be inspected using the `/memory show` command. The typical loading order is:
   1.  **Global Context File:**
-      - Location: `~/.gemini/<configured-context-filename>` (e.g., `~/.gemini/GEMINI.md` in your user home directory).
+      - Location: `~/.ionesco/<configured-context-filename>` (e.g., `~/.ionesco/GEMINI.md` in your user home directory).
       - Scope: Provides default instructions for all your projects.
   2.  **Project Root & Ancestors Context Files:**
       - Location: The CLI searches for the configured context file in the current working directory and then in each parent directory up to either the project root (identified by a `.git` folder) or your home directory.
@@ -597,7 +597,7 @@ Sandboxing is disabled by default, but you can enable it in a few ways:
 
 By default, it uses a pre-built `gemini-cli-sandbox` Docker image.
 
-For project-specific sandboxing needs, you can create a custom Dockerfile at `.gemini/sandbox.Dockerfile` in your project's root directory. This Dockerfile can be based on the base sandbox image:
+For project-specific sandboxing needs, you can create a custom Dockerfile at `.ionesco/sandbox.Dockerfile` in your project's root directory. This Dockerfile can be based on the base sandbox image:
 
 ```dockerfile
 FROM gemini-cli-sandbox
@@ -608,7 +608,7 @@ FROM gemini-cli-sandbox
 # COPY ./my-config /app/my-config
 ```
 
-When `.gemini/sandbox.Dockerfile` exists, you can use `BUILD_SANDBOX` environment variable when running Ionesco CLI to automatically build the custom sandbox image:
+When `.ionesco/sandbox.Dockerfile` exists, you can use `BUILD_SANDBOX` environment variable when running Ionesco CLI to automatically build the custom sandbox image:
 
 ```bash
 BUILD_SANDBOX=1 gemini -s

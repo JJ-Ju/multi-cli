@@ -5,13 +5,16 @@
  */
 
 import type { Config } from '../config/config.js';
-import type {
-  AuthType} from '../core/contentGenerator.js';
+import type { AuthType } from '../core/contentGenerator.js';
 import {
   type ContentGenerator,
   type ContentGeneratorConfig,
 } from '../core/contentGenerator.js';
 import type { GeminiClient } from '../core/client.js';
+import type {
+  ModelToolingSupport,
+  ModelToolingSupportDependencies,
+} from './modelToolingSupport.js';
 
 export interface ModelProvider {
   /** Unique identifier for the provider (e.g., google-genai). */
@@ -45,6 +48,14 @@ export interface ModelProvider {
    * Instantiates a conversation client bound to the supplied config.
    */
   createConversationClient(config: Config): GeminiClient;
+
+  /**
+   * Provides access to model-specific tooling helpers used by CLI tools.
+   */
+  createToolingSupport(
+    config: Config,
+    dependencies: ModelToolingSupportDependencies,
+  ): ModelToolingSupport;
 }
 
 export interface ProviderRegistry {
