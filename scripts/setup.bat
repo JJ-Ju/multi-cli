@@ -81,6 +81,18 @@ if not exist "%SIDECAR_DIR%\.env" if exist "%SIDECAR_DIR%\.env.example" (
 call :log "Setup complete. Activate with:"
 call :log "  call %SIDECAR_DIR%\.venv\Scripts\activate"
 call :log "and run the CLI via scripts\start.bat"
+
+REM ---------------------------------------------------------------------------
+REM Install a convenience shim so `ionesco` works in any new terminal session
+REM ---------------------------------------------------------------------------
+set "WINDOWS_APPS=%USERPROFILE%\AppData\Local\Microsoft\WindowsApps"
+if exist "%WINDOWS_APPS%" (
+  > "%WINDOWS_APPS%\ionesco.cmd" echo @echo off
+  >> "%WINDOWS_APPS%\ionesco.cmd" echo call "%REPO_ROOT%\scripts\start.bat" %%*
+  call :log "Created %WINDOWS_APPS%\ionesco.cmd. Open a new terminal to use 'ionesco'."
+) else (
+  call :log "WindowsApps directory not found; skipped ionesco shim. Add %REPO_ROOT%\scripts to PATH manually."
+)
 exit /b 0
 
 :log

@@ -107,3 +107,22 @@ fi
 log "Setup complete. Activate the sidecar environment with:"
 log "  source providers/grok_sidecar/.venv/bin/activate"
 log "and run the CLI via npm scripts as needed."
+
+# ---------------------------------------------------------------------------
+# Offer global ionesco alias for convenience
+# ---------------------------------------------------------------------------
+PROJECT_BIN="${REPO_ROOT}/scripts/start.sh"
+if [[ -n "${SHELL:-}" ]] && [[ "${SHELL}" == *"/bash" || "${SHELL}" == *"/zsh" ]]; then
+  SHELL_RC="${HOME}/.$(basename "${SHELL}")rc"
+  if [[ -f "${SHELL_RC}" ]]; then
+    if ! grep -q "alias ionesco=" "${SHELL_RC}"; then
+      echo "alias ionesco='${PROJECT_BIN}'" >> "${SHELL_RC}"
+      log "Added ionesco alias to ${SHELL_RC}."
+      log "Reload it with: source ${SHELL_RC}"
+    else
+      log "Shell alias for ionesco already present in ${SHELL_RC}."
+    fi
+  fi
+else
+  log "Skipped alias setup (unsupported shell). Run ./scripts/create_alias.sh manually if desired."
+fi
