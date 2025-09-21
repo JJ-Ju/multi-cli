@@ -11,6 +11,7 @@ import type {
   EmbedContentResponse,
   GenerateContentParameters,
   GenerateContentResponse,
+  GenerateContentResponseUsageMetadata,
   Tool,
   Part,
   FunctionCall,
@@ -307,10 +308,87 @@ export class GrokContentGenerator implements ContentGenerator {
           finishReason: FinishReason.STOP,
         },
       ],
-      usageMetadata: response.usage,
+    } as GenerateContentResponse;
+
+    const usageMetadata = GrokContentGenerator.toUsageMetadata(response.usage);
+    if (usageMetadata) {
+      (
+        generateResponse as {
+          usageMetadata?: GenerateContentResponseUsageMetadata;
+        }
+      ).usageMetadata = usageMetadata;
+    }
+
+    return generateResponse;
+  }
+
+  private static toUsageMetadata(
+    rawUsage?: Record<string, unknown>,
+  ): GenerateContentResponseUsageMetadata | undefined {
+    if (!rawUsage) {
+      return undefined;
+    }
+
+    const toNumber = (...keys: string[]): number | undefined => {
+      for (const key of keys) {
+        const value = rawUsage[key];
+        if (typeof value === 'number' && !Number.isNaN(value)) {
+          return value;
+        }
+        if (typeof value === 'string') {
+          const parsed = Number(value);
+          if (!Number.isNaN(parsed)) {
+            return parsed;
+          }
+        }
+      }
+      return undefined;
     };
 
-    return generateResponse as unknown as GenerateContentResponse;
+    const usage: Partial<GenerateContentResponseUsageMetadata> = {};
+
+    const totalTokens = toNumber(
+      'total_tokens',
+      'totalTokens',
+      'total_token_count',
+    );
+    if (totalTokens !== undefined) {
+      usage.totalTokenCount = totalTokens;
+    }
+
+    const promptTokens = toNumber(
+      'prompt_tokens',
+      'promptTokens',
+      'input_tokens',
+      'inputTokens',
+    );
+    if (promptTokens !== undefined) {
+      usage.promptTokenCount = promptTokens;
+    }
+
+    const completionTokens = toNumber(
+      'completion_tokens',
+      'completionTokens',
+      'output_tokens',
+      'outputTokens',
+    );
+    if (completionTokens !== undefined) {
+      usage.candidatesTokenCount = completionTokens;
+    }
+
+    const cachedTokens = toNumber(
+      'cached_tokens',
+      'cachedTokens',
+      'cached_content_token_count',
+    );
+    if (cachedTokens !== undefined) {
+      (usage as { cachedContentTokenCount?: number }).cachedContentTokenCount =
+        cachedTokens;
+    }
+
+    return Object.keys(usage).length > 0
+      ? (usage as GenerateContentResponseUsageMetadata)
+      : undefined;
   }
 
   private createStreamGenerator(

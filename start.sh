@@ -38,6 +38,17 @@ if [[ -z "${GROK_PYTHON_BIN:-}" ]]; then
   log "Using Grok Python runtime: ${GROK_PYTHON_BIN}"
 fi
 
+if [[ -z "${GROK_DEBUG_LOG_FILE:-}" ]]; then
+  if [[ -n "${HOME:-}" ]]; then
+    DEFAULT_LOG_BASE="${HOME}/.ionesco"
+  else
+    DEFAULT_LOG_BASE="${TMPDIR:-/tmp}/.ionesco"
+  fi
+  DEFAULT_LOG_DIR="${DEFAULT_LOG_BASE}/logs"
+  mkdir -p "${DEFAULT_LOG_DIR}"
+  export GROK_DEBUG_LOG_FILE="${DEFAULT_LOG_DIR}/grok-debug.log"
+fi
+
 load_env_file() {
   local file="$1"
   if [[ -f "${file}" ]]; then

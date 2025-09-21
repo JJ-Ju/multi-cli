@@ -23,6 +23,17 @@ if "%GROK_PYTHON_BIN%"=="" (
   echo [start] Using Grok Python runtime: %GROK_PYTHON_BIN%
 )
 
+if "%GROK_DEBUG_LOG_FILE%"=="" (
+  if not "%USERPROFILE%"=="" (
+    set "_GROK_LOG_BASE=%USERPROFILE%\.ionesco"
+  ) else (
+    set "_GROK_LOG_BASE=%TEMP%\.ionesco"
+  )
+  set "_GROK_LOG_DIR=%_GROK_LOG_BASE%\logs"
+  if not exist "%_GROK_LOG_DIR%" mkdir "%_GROK_LOG_DIR%"
+  set "GROK_DEBUG_LOG_FILE=%_GROK_LOG_DIR%\grok-debug.log"
+)
+
 call :load_env "%REPO_ROOT%\.env"
 call :load_env "%SIDECAR_DIR%\.env"
 

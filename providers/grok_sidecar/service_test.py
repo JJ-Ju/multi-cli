@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -14,6 +15,7 @@ from google.protobuf.json_format import MessageToDict
 
 from grok_sidecar.service import (
     ChatEvent,
+    DEFAULT_MODEL,
     GrokService,
     GrokServiceError,
     ToolDefinition,
@@ -31,7 +33,7 @@ def _make_response(
 ) -> Response:
     response_pb = chat_pb2.GetChatCompletionResponse(
         id="resp-1",
-        model="grok-beta",
+        model=DEFAULT_MODEL,
         usage=usage_pb2.SamplingUsage(total_tokens=total_tokens, completion_tokens=total_tokens),
         choices=[
             chat_pb2.Choice(
@@ -177,11 +179,33 @@ class GrokServiceTest(unittest.TestCase):
     def test_initialise_uses_client_factory(self) -> None:
         client = _ClientStub()
         service = GrokService(client_factory=lambda **kwargs: client)
-        result = service.initialise(api_key="secret", model="grok-beta")
+        result = service.initialise(api_key="secret", model=DEFAULT_MODEL)
 
         self.assertTrue(service._initialised)  # type: ignore[attr-defined]
         self.assertIn("capabilities", result)
         self.assertTrue(result["capabilities"]["supportsCollections"])
+
+    def test_initialise_defaults_to_constant(self) -> None:
+        client = _ClientStub()
+        service = GrokService(client_factory=lambda **kwargs: client)
+        with mock.patch.dict(os.environ, {}, clear=True):
+            service.initialise(api_key="secret")
+
+        self.assertEqual(
+            service._config.get("model"),  # type: ignore[attr-defined]
+            DEFAULT_MODEL,
+        )
+
+    def test_initialise_respects_env_override(self) -> None:
+        client = _ClientStub()
+        service = GrokService(client_factory=lambda **kwargs: client)
+        with mock.patch.dict(os.environ, {"GROK_MODEL": "grok-custom"}, clear=True):
+            service.initialise(api_key="secret")
+
+        self.assertEqual(
+            service._config.get("model"),  # type: ignore[attr-defined]
+            "grok-custom",
+        )
 
     def test_validate_streams_response(self) -> None:
         client = _ClientStub()

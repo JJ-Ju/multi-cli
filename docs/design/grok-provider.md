@@ -61,7 +61,7 @@ First call after process launch. Provides auth/config.
 ```json
 {
   "apiKey": "...", // required
-  "model": "grok-beta", // optional explicit model id
+  "model": "grok-4-fast-reasoning", // optional explicit model id
   "pythonPath": "/usr/bin/python", // optional, used only for diagnostics
   "featureFlags": {
     // future compatibility

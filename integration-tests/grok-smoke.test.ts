@@ -30,7 +30,7 @@ describe('grok provider smoke test', () => {
       GROK_PYTHON_BIN: process.env.GROK_PYTHON_BIN || 'python3',
       GEMINI_API_KEY: process.env.GEMINI_API_KEY || 'stub-gemini-api-key',
       GEMINI_MODEL_PROVIDER: 'grok',
-      GEMINI_MODEL: 'grok-beta',
+      GEMINI_MODEL: 'grok-4-fast-reasoning',
     } as NodeJS.ProcessEnv;
 
     const child = spawn(

@@ -63,6 +63,8 @@ export interface WriteFileToolParams {
   ai_proposed_content?: string;
 }
 
+const TOOLING_SIZE_LIMIT = 4000;
+
 interface GetCorrectedFileContentResult {
   originalContent: string;
   correctedContent: string;
@@ -109,23 +111,35 @@ export async function getCorrectedFileContent(
 
   if (fileExists) {
     // This implies originalContent is available
-    const { params: correctedParams } = await toolingSupport.ensureCorrectEdit({
-      filePath,
-      currentContent: originalContent,
-      originalParams: {
-        old_string: originalContent, // Treat entire current content as old_string
-        new_string: proposedContent,
-        file_path: filePath,
-      },
-      abortSignal,
-    });
-    correctedContent = correctedParams.new_string;
+    if (
+      originalContent.length <= TOOLING_SIZE_LIMIT &&
+      proposedContent.length <= TOOLING_SIZE_LIMIT
+    ) {
+      const { params: correctedParams } =
+        await toolingSupport.ensureCorrectEdit({
+          filePath,
+          currentContent: originalContent,
+          originalParams: {
+            old_string: originalContent, // Treat entire current content as old_string
+            new_string: proposedContent,
+            file_path: filePath,
+          },
+          abortSignal,
+        });
+      correctedContent = correctedParams.new_string;
+    } else {
+      correctedContent = proposedContent;
+    }
   } else {
     // This implies new file (ENOENT)
-    correctedContent = await toolingSupport.ensureCorrectFileContent(
-      proposedContent,
-      abortSignal,
-    );
+    if (proposedContent.length <= TOOLING_SIZE_LIMIT) {
+      correctedContent = await toolingSupport.ensureCorrectFileContent(
+        proposedContent,
+        abortSignal,
+      );
+    } else {
+      correctedContent = proposedContent;
+    }
   }
   return { originalContent, correctedContent, fileExists };
 }

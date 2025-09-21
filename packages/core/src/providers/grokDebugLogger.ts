@@ -6,10 +6,23 @@
 
 import { appendFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
+import { Storage } from '../config/storage.js';
 
-const DEFAULT_LOG_FILE = process.env['GROK_DEBUG_LOG_FILE']
-  ? path.resolve(process.env['GROK_DEBUG_LOG_FILE'])
-  : path.join(process.cwd(), 'grok-debug.log');
+function resolveDefaultLogFile(): string {
+  const explicit = process.env['GROK_DEBUG_LOG_FILE'];
+  if (explicit && explicit.trim()) {
+    return path.resolve(explicit.trim());
+  }
+
+  try {
+    const baseDir = Storage.getGlobalGeminiDir();
+    return path.join(baseDir, 'logs', 'grok-debug.log');
+  } catch (_error) {
+    return path.join(process.cwd(), 'grok-debug.log');
+  }
+}
+
+const DEFAULT_LOG_FILE = resolveDefaultLogFile();
 
 function ensureDirectoryExists(filePath: string): void {
   const dir = path.dirname(filePath);

@@ -434,7 +434,19 @@ export const useGeminiStream = (
         // Prevents additional output after a user initiated cancel.
         return '';
       }
-      let newGeminiMessageBuffer = currentGeminiMessageBuffer + eventValue;
+      let textToAppend = eventValue;
+      if (
+        currentGeminiMessageBuffer &&
+        eventValue.startsWith(currentGeminiMessageBuffer)
+      ) {
+        textToAppend = eventValue.slice(currentGeminiMessageBuffer.length);
+      }
+
+      if (!textToAppend) {
+        return currentGeminiMessageBuffer;
+      }
+
+      let newGeminiMessageBuffer = currentGeminiMessageBuffer + textToAppend;
       if (
         pendingHistoryItemRef.current?.type !== 'gemini' &&
         pendingHistoryItemRef.current?.type !== 'gemini_content'
@@ -447,7 +459,7 @@ export const useGeminiStream = (
           text: '',
           modelProviderId,
         });
-        newGeminiMessageBuffer = eventValue;
+        newGeminiMessageBuffer = textToAppend;
       }
       // Split large messages for better rendering performance. Ideally,
       // we should maximize the amount of output sent to <Static />.

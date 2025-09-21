@@ -404,11 +404,11 @@ The CLI automatically loads environment variables from an `.env` file. The loadi
   - API key for the xAI Grok provider sidecar. Required before activating `/agent use grok`.
   - Example: `export GROK_API_KEY="sk-your-secret"`
 - **`GROK_MODEL`**/**`GROK_MODEL_ID`**:
-  - Preferred Grok model identifier. If unset, defaults to `grok-4-fast-reasoning-latest`.
+  - Preferred Grok model identifier. If unset, defaults to `grok-4-fast-reasoning`.
 - **`GROK_PYTHON_BIN`**:
   - Optional path to the Python 3.10+ interpreter used for the sidecar. Overrides auto-detection.
 - **`GROK_DEBUG_LOG_FILE`**:
-  - Overrides the default `grok-debug.log` location for sidecar logging.
+  - Overrides the default `~/.ionesco/logs/grok-debug.log` location for sidecar logging.
 - **`GOOGLE_API_KEY`**:
   - Your Google Cloud API key.
   - Required for using Vertex AI in express mode.

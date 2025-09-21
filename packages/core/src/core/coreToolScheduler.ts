@@ -338,6 +338,7 @@ export class CoreToolScheduler {
   private onEditorClose: () => void;
   private isFinalizingToolCalls = false;
   private isScheduling = false;
+  private readonly seenCallIds = new Set<string>();
   private requestQueue: Array<{
     request: ToolCallRequestInfo | ToolCallRequestInfo[];
     signal: AbortSignal;
@@ -682,7 +683,33 @@ export class CoreToolScheduler {
       }
       const requestsToProcess = Array.isArray(request) ? request : [request];
 
-      const newToolCalls: ToolCall[] = requestsToProcess.map(
+      const existingCallIds = new Set(
+        this.toolCalls.map((call) => call.request.callId),
+      );
+      const uniqueRequests: ToolCallRequestInfo[] = [];
+
+      for (const req of requestsToProcess) {
+        if (
+          existingCallIds.has(req.callId) ||
+          this.seenCallIds.has(req.callId)
+        ) {
+          logGrokDebug('scheduler.duplicateCallIgnored', {
+            callId: req.callId,
+            name: req.name,
+          });
+          continue;
+        }
+        existingCallIds.add(req.callId);
+        this.seenCallIds.add(req.callId);
+        uniqueRequests.push(req);
+      }
+
+      if (uniqueRequests.length === 0) {
+        logGrokDebug('scheduler._schedule.end');
+        return;
+      }
+
+      const newToolCalls: ToolCall[] = uniqueRequests.map(
         (reqInfo): ToolCall => {
           const toolInstance = this.toolRegistry.getTool(reqInfo.name);
           if (!toolInstance) {

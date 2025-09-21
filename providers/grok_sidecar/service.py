@@ -106,6 +106,9 @@ def _count_occurrences(haystack: str, needle: str) -> int:
     return haystack.count(needle)
 
 
+DEFAULT_MODEL = "grok-4-fast-reasoning"
+
+
 class GrokService:
     """Facade responsible for all xAI SDK interactions."""
 
@@ -135,7 +138,8 @@ class GrokService:
         except Exception as exc:  # pragma: no cover - defensive
             raise GrokServiceError(f"Failed to initialise Grok SDK client: {exc}") from exc
 
-        self._config = {"api_key": api_key, "model": model or "grok-beta"}
+        resolved_model = self._select_model(model)
+        self._config = {"api_key": api_key, "model": resolved_model}
         self._initialised = True
 
         has_collections = hasattr(self._client, "collections")
@@ -164,7 +168,7 @@ class GrokService:
         builder = self._message_builder("user")
         try:
             chat = self._client.chat.create(
-                model=self._config.get("model"),
+                model=self._config.get("model", DEFAULT_MODEL),
                 messages=[builder(prompt_text)],
                 max_tokens=128,
             )
@@ -196,7 +200,7 @@ class GrokService:
 
         try:
             chat = self._client.chat.create(
-                model=self._config.get("model"),
+                model=self._config.get("model", DEFAULT_MODEL),
                 conversation_id=chat_kwargs.pop("conversation_id", None),
                 messages=self._to_sdk_messages(messages),
                 tools=list(tool_protos) or None,
@@ -297,7 +301,7 @@ class GrokService:
 
         try:
             chat = self._client.chat.create(
-                model=self._config.get("model"),
+                model=DEFAULT_MODEL,
                 messages=[user_message],
                 search_parameters=search_params,
                 max_tokens=max_tokens or 512,
@@ -766,6 +770,40 @@ class GrokService:
             else:
                 parts.append(json.dumps(item, ensure_ascii=False))
         return "\n".join(part for part in parts if part).strip()
+
+    def _normalize_model(self, model: Optional[str]) -> Optional[str]:
+        if not model:
+            return None
+        trimmed = model.strip()
+        if not trimmed:
+            return None
+        lower = trimmed.lower()
+        if lower == "auto":
+            return DEFAULT_MODEL
+        if lower in {
+            "grok-beta",
+            "grok 1.5",
+            "grok-1.5",
+            "grok1.5",
+            "grok_v1.5",
+        }:
+            return DEFAULT_MODEL
+        if not lower.startswith("grok"):
+            return trimmed
+        return trimmed
+
+    def _select_model(self, preferred: Optional[str]) -> str:
+        candidate = self._normalize_model(preferred)
+        if candidate:
+            return candidate
+
+        env_candidate = self._normalize_model(
+            os.environ.get("GROK_MODEL") or os.environ.get("GROK_MODEL_ID")
+        )
+        if env_candidate:
+            return env_candidate
+
+        return DEFAULT_MODEL
 
 
 __all__ = [

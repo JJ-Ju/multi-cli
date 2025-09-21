@@ -14,7 +14,7 @@ Google Gemini provider while the CLI is running.
 - Python 3.10 or newer available on your PATH (the sidecar discovers `python3`
   or `python`).
 - An xAI Grok API key with access to at least one model (for example
-  `grok-4-fast-reasoning-latest`).
+  `grok-4-fast-reasoning`).
 - Ionesco CLI dependencies installed via `npm install` at the repo root.
 
 ## One-Time Setup
@@ -36,15 +36,13 @@ Google Gemini provider while the CLI is running.
 
    ```bash
    GROK_API_KEY=sk-your-secret-key
-   GROK_MODEL=grok-4-fast-reasoning-latest   # optional override
+   GROK_MODEL=grok-4-fast-reasoning   # optional override
    ```
 
-   If you omit `GROK_MODEL`, the sidecar falls back to
-   `grok-4-fast-reasoning-latest`. The CLI also honours `GROK_MODEL_ID` for
-   compatibility with other tooling.
+   If you omit `GROK_MODEL`, the sidecar uses `grok-4-fast-reasoning`.
 
 3. **Optional:** set `GROK_DEBUG_LOG_FILE` in your shell to capture sidecar logs
-   (defaults to `./grok-debug.log`).
+   (defaults to `~/.ionesco/logs/grok-debug.log`).
 
 ## Launching the CLI
 

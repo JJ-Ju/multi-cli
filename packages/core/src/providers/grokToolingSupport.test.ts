@@ -43,7 +43,7 @@ function createSupport(overrides: Partial<GrokSidecarClient> = {}) {
 
   const support = new GrokToolingSupport(sidecar, {
     apiKey: 'test-key',
-    model: 'grok-4',
+    model: 'grok-4-fast-reasoning',
   });
 
   return { support, sidecar };

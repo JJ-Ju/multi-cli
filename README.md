@@ -42,7 +42,7 @@ Ionesco CLI ships with an experimental Grok provider backed by the Python sideca
 2. Copy `providers/grok_sidecar/.env.example` to `.env` and add:
    ```bash
    GROK_API_KEY=your_api_key
-   GROK_MODEL=your_preferred_model_id   # optional; defaults to grok-4-fast-reasoning-latest
+   GROK_MODEL=your_preferred_model_id   # optional; defaults to grok-4-fast-reasoning
    ```
 3. Launch the CLI (`./start.sh` or `scripts\start.bat`).
 4. Switch providers inside the session:

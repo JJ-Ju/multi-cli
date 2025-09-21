@@ -23,7 +23,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as dotenv from 'dotenv';
 
-const DEFAULT_MODEL_ID = 'grok-4-fast-reasoning-latest';
+const DEFAULT_MODEL_ID = 'grok-4-fast-reasoning';
+const GROK_LEGACY_ALIASES = new Set([
+  'grok-beta',
+  'grok 1.5',
+  'grok-1.5',
+  'grok1.5',
+  'grok_v1.5',
+]);
 
 export class GrokProvider implements ModelProvider {
   readonly id = 'grok';
@@ -37,17 +44,7 @@ export class GrokProvider implements ModelProvider {
   }
 
   isModelSupported(modelId: string): boolean {
-    if (typeof modelId !== 'string') {
-      return false;
-    }
-    const normalised = modelId.trim().toLowerCase();
-    if (!normalised) {
-      return false;
-    }
-    if (normalised === 'auto') {
-      return true;
-    }
-    return normalised.startsWith('grok');
+    return this.normalizeModel(modelId) !== undefined;
   }
 
   createContentGeneratorConfig(
@@ -68,9 +65,10 @@ export class GrokProvider implements ModelProvider {
     _sessionId?: string,
   ): Promise<ContentGenerator> {
     const sidecar = this.ensureSidecar();
+    const modelId = this.resolveModel(config);
     return new GrokContentGenerator(config, sidecar, {
       apiKey: generatorConfig.apiKey || '',
-      model: config.getModel(),
+      model: modelId,
       pythonPath: process.env['GROK_PYTHON_BIN'],
     });
   }
@@ -85,9 +83,10 @@ export class GrokProvider implements ModelProvider {
   ): ModelToolingSupport {
     this.ensureEnvironment();
     const sidecar = this.ensureSidecar();
+    const modelId = this.resolveModel(config);
     return new GrokToolingSupport(sidecar, {
       apiKey: process.env['GROK_API_KEY'] || '',
-      model: config.getModel(),
+      model: modelId,
       pythonPath: process.env['GROK_PYTHON_BIN'],
     });
   }
@@ -140,38 +139,54 @@ export class GrokProvider implements ModelProvider {
       return;
     }
 
-    if (key === 'GROK_API_KEY') {
-      if (!process.env[key]) {
-        process.env[key] = value;
-      }
-      return;
-    }
-
-    if (
-      !process.env[key] ||
-      process.env[key] === '' ||
-      process.env[key] === DEFAULT_MODEL_ID
-    ) {
+    if (!process.env[key]) {
       process.env[key] = value;
-    }
-
-    if (key === 'GROK_MODEL' && !process.env['GROK_MODEL_ID']) {
-      process.env['GROK_MODEL_ID'] = value;
-    } else if (key === 'GROK_MODEL_ID' && !process.env['GROK_MODEL']) {
-      process.env['GROK_MODEL'] = value;
     }
   }
 
+  private resolveModel(config?: Config): string {
+    const configModel = this.normalizeModel(
+      typeof (config as { getModel?: () => string | undefined })?.getModel ===
+        'function'
+        ? (config as { getModel: () => string | undefined }).getModel()
+        : undefined,
+    );
+    if (configModel) {
+      return configModel;
+    }
+
+    const envModel = this.getEnvModel();
+    if (envModel) {
+      return envModel;
+    }
+
+    return DEFAULT_MODEL_ID;
+  }
+
+  private normalizeModel(value?: string | null): string | undefined {
+    if (typeof value !== 'string') {
+      return undefined;
+    }
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+    const lower = trimmed.toLowerCase();
+    if (lower === 'auto') {
+      return DEFAULT_MODEL_ID;
+    }
+    if (GROK_LEGACY_ALIASES.has(lower)) {
+      return DEFAULT_MODEL_ID;
+    }
+    if (!lower.startsWith('grok')) {
+      return undefined;
+    }
+    return trimmed;
+  }
+
   private getEnvModel(): string | undefined {
-    const primary = process.env['GROK_MODEL'];
-    if (typeof primary === 'string' && primary.trim()) {
-      return primary.trim();
-    }
-    const secondary = process.env['GROK_MODEL_ID'];
-    if (typeof secondary === 'string' && secondary.trim()) {
-      return secondary.trim();
-    }
-    return undefined;
+    const envValue = process.env['GROK_MODEL'] ?? process.env['GROK_MODEL_ID'];
+    return this.normalizeModel(envValue);
   }
 
   private resolveLocations(): { packageRoot: string } {

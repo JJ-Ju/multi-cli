@@ -127,7 +127,13 @@ describe('GrokContentGenerator', () => {
           },
         },
       ],
-      usageMetadata: resultPayload.usage,
+    });
+
+    const usageMetadata = (chunks[2] as Record<string, unknown>)[
+      'usageMetadata'
+    ];
+    expect(usageMetadata as Record<string, unknown>).toMatchObject({
+      totalTokenCount: resultPayload.usage?.totalTokens,
     });
 
     expect(sidecar.ensureInitialised).toHaveBeenCalled();

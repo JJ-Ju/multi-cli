@@ -14,6 +14,7 @@ import {
 } from './coreToolScheduler.js';
 import type {
   ToolCallConfirmationDetails,
+  ToolCallRequestInfo,
   ToolConfirmationPayload,
   ToolInvocation,
   ToolResult,
@@ -216,6 +217,86 @@ describe('CoreToolScheduler', () => {
     const completedCalls = onAllToolCallsComplete.mock
       .calls[0][0] as ToolCall[];
     expect(completedCalls[0].status).toBe('cancelled');
+  });
+
+  it('ignores duplicate tool call ids while scheduling', async () => {
+    const mockTool = new MockTool();
+    mockTool.executeFn.mockResolvedValue({
+      llmContent: 'ok',
+      returnDisplay: 'ok',
+    });
+
+    const mockToolRegistry = {
+      getTool: () => mockTool,
+      getFunctionDeclarations: () => [],
+      tools: new Map(),
+      discovery: {},
+      registerTool: () => {},
+      getToolByName: () => mockTool,
+      getToolByDisplayName: () => mockTool,
+      getTools: () => [],
+      discoverTools: async () => {},
+      getAllTools: () => [],
+      getToolsByServer: () => [],
+      getAllToolNames: () => [mockTool.name],
+    } as unknown as ToolRegistry;
+
+    const onAllToolCallsComplete = vi.fn();
+    const onToolCallsUpdate = vi.fn();
+
+    const mockConfig = {
+      getSessionId: () => 'test-session-id',
+      getUsageStatisticsEnabled: () => true,
+      getDebugMode: () => false,
+      getApprovalMode: () => ApprovalMode.DEFAULT,
+      getAllowedTools: () => [],
+      getContentGeneratorConfig: () => ({
+        model: 'test-model',
+        authType: 'oauth-personal',
+      }),
+      getShellExecutionConfig: () => ({
+        terminalWidth: 90,
+        terminalHeight: 30,
+      }),
+      storage: {
+        getProjectTempDir: () => '/tmp',
+      },
+      getTruncateToolOutputThreshold: () =>
+        DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
+      getTruncateToolOutputLines: () => DEFAULT_TRUNCATE_TOOL_OUTPUT_LINES,
+      getToolRegistry: () => mockToolRegistry,
+      getUseSmartEdit: () => false,
+      getUseModelRouter: () => false,
+      getGeminiClient: () => null,
+      getEnableToolOutputTruncation: () => false,
+    } as unknown as Config;
+
+    const scheduler = new CoreToolScheduler({
+      config: mockConfig,
+      onAllToolCallsComplete,
+      onToolCallsUpdate,
+      getPreferredEditor: () => 'vscode',
+      onEditorClose: vi.fn(),
+    });
+
+    const controller = new AbortController();
+    const baseRequest = {
+      callId: 'duplicate-call',
+      name: mockTool.name,
+      args: { param: 'value' },
+      prompt_id: 'prompt-1',
+      isClientInitiated: false,
+    } satisfies ToolCallRequestInfo;
+
+    await Promise.all([
+      scheduler.schedule(baseRequest, controller.signal),
+      scheduler.schedule({ ...baseRequest }, controller.signal),
+    ]);
+
+    await waitForStatus(onToolCallsUpdate, 'success');
+
+    expect(mockTool.executeFn).toHaveBeenCalledTimes(1);
+    expect(onAllToolCallsComplete).toHaveBeenCalledTimes(1);
   });
 
   describe('getToolSuggestion', () => {

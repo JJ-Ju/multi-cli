@@ -34,12 +34,12 @@ describe('<ConsoleSummaryDisplay />', () => {
     const { lastFrame } = render(
       <ConsoleSummaryDisplay
         errorCount={2}
-        model="grok-beta"
+        model="grok-4-fast-reasoning"
         modelProviderId="grok"
       />,
     );
 
-    expect(lastFrame()).toContain('grok · grok-beta');
+    expect(lastFrame()).toContain('grok · grok-4-fast-reasoning');
     expect(lastFrame()).toContain('2 errors');
   });
 });

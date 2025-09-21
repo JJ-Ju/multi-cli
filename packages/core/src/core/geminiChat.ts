@@ -491,6 +491,7 @@ export class GeminiChat {
     streamResponse: AsyncGenerator<GenerateContentResponse>,
   ): AsyncGenerator<GenerateContentResponse> {
     const modelResponseParts: Part[] = [];
+    let accumulatedText = '';
     let hasReceivedAnyChunk = false;
     let hasReceivedValidChunk = false;
     let hasToolCall = false;
@@ -514,9 +515,26 @@ export class GeminiChat {
             hasToolCall = true;
           }
 
-          modelResponseParts.push(
-            ...content.parts.filter((part) => !part.thought),
-          );
+          for (const part of content.parts) {
+            if (part.thought) {
+              continue;
+            }
+
+            if (typeof part.text === 'string') {
+              const rawText = part.text;
+              let addition = rawText;
+              if (accumulatedText && rawText.startsWith(accumulatedText)) {
+                addition = rawText.slice(accumulatedText.length);
+              }
+              if (addition) {
+                accumulatedText += addition;
+                modelResponseParts.push({ ...part, text: addition });
+              }
+              continue;
+            }
+
+            modelResponseParts.push(part);
+          }
         }
       } else {
         logInvalidChunk(
