@@ -1,6 +1,6 @@
 # Observability with OpenTelemetry
 
-Learn how to enable and setup OpenTelemetry for Gemini CLI.
+Learn how to enable and setup OpenTelemetry for Ionesco CLI.
 
 - [Observability with OpenTelemetry](#observability-with-opentelemetry)
   - [Key Benefits](#key-benefits)
@@ -33,7 +33,7 @@ Learn how to enable and setup OpenTelemetry for Gemini CLI.
 ## OpenTelemetry Integration
 
 Built on **[OpenTelemetry]** — the vendor-neutral, industry-standard
-observability framework — Gemini CLI's observability system provides:
+observability framework — Ionesco CLI's observability system provides:
 
 - **Universal Compatibility**: Export to any OpenTelemetry backend (Google
   Cloud, Jaeger, Prometheus, Datadog, etc.)
@@ -116,7 +116,7 @@ Sends telemetry directly to Google Cloud services. No collector needed.
      }
    }
    ```
-2. Run Gemini CLI and send prompts.
+2. Run Ionesco CLI and send prompts.
 3. View logs and metrics:
    - Open the Google Cloud Console in your browser after sending prompts:
      - Logs: https://console.cloud.google.com/logs/
@@ -148,7 +148,7 @@ forward data to Google Cloud.
    - Provide links to view traces, metrics, and logs in Google Cloud Console
    - Save collector logs to `~/.gemini/tmp/<projectHash>/otel/collector-gcp.log`
    - Stop collector on exit (e.g. `Ctrl+C`)
-3. Run Gemini CLI and send prompts.
+3. Run Ionesco CLI and send prompts.
 4. View logs and metrics:
    - Open the Google Cloud Console in your browser after sending prompts:
      - Logs: https://console.cloud.google.com/logs/
@@ -174,7 +174,7 @@ For local development and debugging, you can capture telemetry data locally:
      }
    }
    ```
-2. Run Gemini CLI and send prompts.
+2. Run Ionesco CLI and send prompts.
 3. View logs and metrics in the specified file (e.g., `.gemini/telemetry.log`).
 
 ### Collector-Based Export (Advanced)
@@ -189,21 +189,21 @@ For local development and debugging, you can capture telemetry data locally:
    - Provide a Jaeger UI at http://localhost:16686
    - Save logs/metrics to `~/.gemini/tmp/<projectHash>/otel/collector.log`
    - Stop collector on exit (e.g. `Ctrl+C`)
-2. Run Gemini CLI and send prompts.
+2. Run Ionesco CLI and send prompts.
 3. View traces at http://localhost:16686 and logs/metrics in the collector log
    file.
 
 ## Logs and Metrics
 
 The following section describes the structure of logs and metrics generated for
-Gemini CLI.
+Ionesco CLI.
 
 - A `sessionId` is included as a common attribute on all logs and metrics.
 
 ### Logs
 
 Logs are timestamped records of specific events. The following events are logged
-for Gemini CLI:
+for Ionesco CLI:
 
 - `gemini_cli.config`: This event occurs once at startup with the CLI's
   configuration.
@@ -298,7 +298,7 @@ for Gemini CLI:
   - **Attributes**:
     - `model`
 
-- `gemini_cli.flash_fallback`: This event occurs when Gemini CLI switches to flash as fallback.
+- `gemini_cli.flash_fallback`: This event occurs when Ionesco CLI switches to flash as fallback.
   - **Attributes**:
     - `auth_type`
 
@@ -309,7 +309,7 @@ for Gemini CLI:
 
 ### Metrics
 
-Metrics are numerical measurements of behavior over time. The following metrics are collected for Gemini CLI:
+Metrics are numerical measurements of behavior over time. The following metrics are collected for Ionesco CLI:
 
 - `gemini_cli.session.count` (Counter, Int): Incremented once per CLI startup.
 

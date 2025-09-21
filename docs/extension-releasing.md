@@ -31,7 +31,7 @@ You can also cherry pick changes from one branch into another using `git cherry-
 
 ## Releasing through Github releases
 
-Gemini CLI extensions can be distributed through [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases). This provides a faster and more reliable initial installation experience for users, as it avoids the need to clone the repository.
+Ionesco CLI extensions can be distributed through [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases). This provides a faster and more reliable initial installation experience for users, as it avoids the need to clone the repository.
 
 Each release includes at least one archive file, which contains the full contents of the repo at the tag that it was linked to. Releases may also include [pre-built archives](#custom-pre-built-archives) if your extension requires some build step or has platform specific binaries attached to it.
 
@@ -47,7 +47,7 @@ Custom archives may also be used if you want to develop your extension within a 
 
 #### Platform specific archives
 
-To ensure Gemini CLI can automatically find the correct release asset for each platform, you must follow this naming convention. The CLI will search for assets in the following order:
+To ensure Ionesco CLI can automatically find the correct release asset for each platform, you must follow this naming convention. The CLI will search for assets in the following order:
 
 1.  **Platform and Architecture-Specific:** `{platform}.{arch}.{name}.{extension}`
 2.  **Platform-Specific:** `{platform}.{name}.{extension}`
@@ -78,7 +78,7 @@ The rest of the layout should look exactly the same as a typical extension, see 
 
 #### Example GitHub Actions workflow
 
-Here is an example of a GitHub Actions workflow that builds and releases a Gemini CLI extension for multiple platforms:
+Here is an example of a GitHub Actions workflow that builds and releases a Ionesco CLI extension for multiple platforms:
 
 ```yaml
 name: Release Extension

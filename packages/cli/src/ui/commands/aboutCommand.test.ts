@@ -39,6 +39,7 @@ describe('aboutCommand', () => {
       services: {
         config: {
           getModel: vi.fn(),
+          getModelProviderId: vi.fn().mockReturnValue('test-provider'),
           getIdeMode: vi.fn().mockReturnValue(true),
         },
         settings: {
@@ -95,6 +96,7 @@ describe('aboutCommand', () => {
         osVersion: 'test-os',
         sandboxEnv: 'no sandbox',
         modelVersion: 'test-model',
+        modelProvider: 'test-provider',
         selectedAuthType: 'test-auth',
         gcpProject: 'test-gcp-project',
         ideClient: 'test-ide',
@@ -155,6 +157,7 @@ describe('aboutCommand', () => {
         osVersion: 'test-os',
         sandboxEnv: 'no sandbox',
         modelVersion: 'test-model',
+        modelProvider: 'test-provider',
         selectedAuthType: 'test-auth',
         gcpProject: 'test-gcp-project',
         ideClient: '',

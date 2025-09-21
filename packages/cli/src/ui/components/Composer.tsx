@@ -49,7 +49,8 @@ export const Composer = () => {
 
   // Build footer props from context values
   const footerProps: Omit<FooterProps, 'vimMode'> = {
-    model: config.getModel(),
+    model: uiState.currentModel,
+    modelProviderId: uiState.currentModelProvider,
     targetDir: config.getTargetDir(),
     debugMode: config.getDebugMode(),
     branchName: uiState.branchName,

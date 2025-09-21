@@ -8,7 +8,7 @@ import { render } from 'ink-testing-library';
 import { describe, it, expect, vi } from 'vitest';
 import { HistoryItemDisplay } from './HistoryItemDisplay.js';
 import type { HistoryItem } from '../types.js';
-import { MessageType } from '../types.js';
+import { MessageType, ToolCallStatus } from '../types.js';
 import { SessionStatsProvider } from '../contexts/SessionContext.js';
 import type { Config } from '@google/gemini-cli-core';
 
@@ -73,6 +73,7 @@ describe('<HistoryItemDisplay />', () => {
       osVersion: 'test-os',
       sandboxEnv: 'test-env',
       modelVersion: 'test-model',
+      modelProvider: 'test-provider',
       selectedAuthType: 'test-auth',
       gcpProject: 'test-project',
       ideClient: 'test-ide',
@@ -80,7 +81,7 @@ describe('<HistoryItemDisplay />', () => {
     const { lastFrame } = render(
       <HistoryItemDisplay {...baseItem} item={item} />,
     );
-    expect(lastFrame()).toContain('About Gemini CLI');
+    expect(lastFrame()).toContain('About Ionesco CLI');
   });
 
   it('renders ModelStatsDisplay for "model_stats" type', () => {
@@ -125,5 +126,41 @@ describe('<HistoryItemDisplay />', () => {
       </SessionStatsProvider>,
     );
     expect(lastFrame()).toContain('Agent powering down. Goodbye!');
+  });
+
+  it('renders provider badge for gemini responses when provider is set', () => {
+    const item: HistoryItem = {
+      ...baseItem,
+      type: 'gemini',
+      text: 'Streaming response',
+      modelProviderId: 'grok',
+    };
+    const { lastFrame } = render(
+      <HistoryItemDisplay {...baseItem} item={item} />,
+    );
+    expect(lastFrame()).toContain('✦ grok ·');
+    expect(lastFrame()).toContain('Streaming response');
+  });
+
+  it('renders provider badge for tool groups when provider differs from gemini', () => {
+    const item: HistoryItem = {
+      ...baseItem,
+      type: 'tool_group',
+      tools: [
+        {
+          callId: 'call-123',
+          name: 'run_shell_command',
+          description: 'Run shell command',
+          status: ToolCallStatus.Pending,
+          resultDisplay: undefined,
+          confirmationDetails: undefined,
+        },
+      ],
+      modelProviderId: 'grok',
+    };
+    const { lastFrame } = render(
+      <HistoryItemDisplay {...baseItem} item={item} />,
+    );
+    expect(lastFrame()).toContain('✦ grok');
   });
 });

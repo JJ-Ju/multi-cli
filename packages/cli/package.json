@@ -1,7 +1,7 @@
 {
   "name": "@google/gemini-cli",
   "version": "0.7.0-nightly.20250918.2722473a",
-  "description": "Gemini CLI",
+  "description": "Ionesco CLI",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/google-gemini/gemini-cli.git"

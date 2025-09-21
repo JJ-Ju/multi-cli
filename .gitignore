@@ -53,3 +53,18 @@ gha-creds-*.json
 
 # Log files
 patch_output.log
+grok-debug.log
+*/grok-debug.log
+
+# Python sidecar artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+
+# Ensure contributor guide stays tracked
+!AGENTS.md

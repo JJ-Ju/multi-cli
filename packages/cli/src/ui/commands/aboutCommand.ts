@@ -26,6 +26,8 @@ export const aboutCommand: SlashCommand = {
       })`;
     }
     const modelVersion = context.services.config?.getModel() || 'Unknown';
+    const modelProvider =
+      context.services.config?.getModelProviderId?.() || 'Unknown';
     const cliVersion = await getCliVersion();
     const selectedAuthType =
       context.services.settings.merged.security?.auth?.selectedType || '';
@@ -38,6 +40,7 @@ export const aboutCommand: SlashCommand = {
       osVersion,
       sandboxEnv,
       modelVersion,
+      modelProvider,
       selectedAuthType,
       gcpProject,
       ideClient,

@@ -472,6 +472,16 @@ const SETTINGS_SCHEMA = {
         description: 'The Gemini model to use for conversations.',
         showInDialog: false,
       },
+      provider: {
+        type: 'string',
+        label: 'Model Provider',
+        category: 'Model',
+        requiresRestart: false,
+        default: undefined as string | undefined,
+        description:
+          'The provider backing the selected model (e.g., google-genai).',
+        showInDialog: false,
+      },
       maxSessionTurns: {
         type: 'number',
         label: 'Max Session Turns',

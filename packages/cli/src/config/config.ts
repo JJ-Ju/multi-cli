@@ -57,6 +57,7 @@ const logger = {
 
 export interface CliArgs {
   model: string | undefined;
+  modelProvider: string | undefined;
   sandbox: boolean | string | undefined;
   sandboxImage: string | undefined;
   debug: boolean | undefined;
@@ -92,7 +93,7 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
     .locale('en')
     .scriptName('gemini')
     .usage(
-      'Usage: gemini [options] [command]\n\nGemini CLI - Launch an interactive CLI, use -p/--prompt for non-interactive mode',
+      'Usage: gemini [options] [command]\n\nIonesco CLI - Launch an interactive CLI, use -p/--prompt for non-interactive mode',
     )
     .option('telemetry', {
       type: 'boolean',
@@ -164,12 +165,16 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
       'proxy',
       'Use the "proxy" setting in settings.json instead. This flag will be removed in a future version.',
     )
-    .command('$0 [promptWords...]', 'Launch Gemini CLI', (yargsInstance) =>
+    .command('$0 [promptWords...]', 'Launch Ionesco CLI', (yargsInstance) =>
       yargsInstance
         .option('model', {
           alias: 'm',
           type: 'string',
           description: `Model`,
+        })
+        .option('model-provider', {
+          type: 'string',
+          description: 'Model provider identifier (e.g. google-genai).',
         })
         .option('prompt', {
           alias: 'p',
@@ -562,6 +567,14 @@ export async function loadCliConfig(
     settings.model?.name ||
     defaultModel;
 
+  const resolvedModelProvider = [
+    argv.modelProvider,
+    process.env['GEMINI_MODEL_PROVIDER'],
+    settings.model?.provider,
+  ]
+    .map((value) => (typeof value === 'string' ? value.trim() : undefined))
+    .find((value) => value);
+
   const sandboxConfig = await loadSandboxConfig(settings, argv);
   const screenReader =
     argv.screenReader !== undefined
@@ -653,6 +666,7 @@ export async function loadCliConfig(
       format: (argv.outputFormat ?? settings.output?.format) as OutputFormat,
     },
     useModelRouter,
+    modelProviderId: resolvedModelProvider,
   });
 }
 

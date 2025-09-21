@@ -1,7 +1,7 @@
 {
   "name": "@google/gemini-cli-core",
   "version": "0.7.0-nightly.20250918.2722473a",
-  "description": "Gemini CLI Core",
+  "description": "Ionesco CLI Core",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/google-gemini/gemini-cli.git"

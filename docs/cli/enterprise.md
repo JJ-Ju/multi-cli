@@ -1,8 +1,8 @@
-# Gemini CLI for the Enterprise
+# Ionesco CLI for the Enterprise
 
-This document outlines configuration patterns and best practices for deploying and managing Gemini CLI in an enterprise environment. By leveraging system-level settings, administrators can enforce security policies, manage tool access, and ensure a consistent experience for all users.
+This document outlines configuration patterns and best practices for deploying and managing Ionesco CLI in an enterprise environment. By leveraging system-level settings, administrators can enforce security policies, manage tool access, and ensure a consistent experience for all users.
 
-> **A Note on Security:** The patterns described in this document are intended to help administrators create a more controlled and secure environment for using Gemini CLI. However, they should not be considered a foolproof security boundary. A determined user with sufficient privileges on their local machine may still be able to circumvent these configurations. These measures are designed to prevent accidental misuse and enforce corporate policy in a managed environment, not to defend against a malicious actor with local administrative rights.
+> **A Note on Security:** The patterns described in this document are intended to help administrators create a more controlled and secure environment for using Ionesco CLI. However, they should not be considered a foolproof security boundary. A determined user with sufficient privileges on their local machine may still be able to circumvent these configurations. These measures are designed to prevent accidental misuse and enforce corporate policy in a managed environment, not to defend against a malicious actor with local administrative rights.
 
 ## Centralized Configuration: The System Settings File
 
@@ -175,7 +175,7 @@ If your organization uses custom tools via [Model-Context Protocol (MCP) servers
 
 ### How MCP Server Configurations are Merged
 
-Gemini CLI loads `settings.json` files from three levels: System, Workspace, and User. When it comes to the `mcpServers` object, these configurations are **merged**:
+Ionesco CLI loads `settings.json` files from three levels: System, Workspace, and User. When it comes to the `mcpServers` object, these configurations are **merged**:
 
 1.  **Merging:** The lists of servers from all three levels are combined into a single list.
 2.  **Precedence:** If a server with the **same name** is defined at multiple levels (e.g., a server named `corp-api` exists in both system and user settings), the definition from the highest-precedence level is used. The order of precedence is: **System > Workspace > User**.
@@ -280,7 +280,7 @@ You can also specify a custom, hardened Docker image for the sandbox using the `
 
 ## Controlling Network Access via Proxy
 
-In corporate environments with strict network policies, you can configure Gemini CLI to route all outbound traffic through a corporate proxy. This can be set via an environment variable, but it can also be enforced for custom tools via the `mcpServers` configuration.
+In corporate environments with strict network policies, you can configure Ionesco CLI to route all outbound traffic through a corporate proxy. This can be set via an environment variable, but it can also be enforced for custom tools via the `mcpServers` configuration.
 
 **Example (for an MCP Server):**
 
@@ -301,7 +301,7 @@ In corporate environments with strict network policies, you can configure Gemini
 
 ## Telemetry and Auditing
 
-For auditing and monitoring purposes, you can configure Gemini CLI to send telemetry data to a central location. This allows you to track tool usage and other events. For more information, see the [telemetry documentation](../telemetry.md).
+For auditing and monitoring purposes, you can configure Ionesco CLI to send telemetry data to a central location. This allows you to track tool usage and other events. For more information, see the [telemetry documentation](../telemetry.md).
 
 **Example:** Enable telemetry and send it to a local OTLP collector. If `otlpEndpoint` is not specified, it defaults to `http://localhost:4317`.
 
@@ -333,7 +333,7 @@ If a user has a different authentication method configured, they will be prompte
 
 ## Putting It All Together: Example System `settings.json`
 
-Here is an example of a system `settings.json` file that combines several of the patterns discussed above to create a secure, controlled environment for Gemini CLI.
+Here is an example of a system `settings.json` file that combines several of the patterns discussed above to create a secure, controlled environment for Ionesco CLI.
 
 ```json
 {

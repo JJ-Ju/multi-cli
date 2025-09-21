@@ -1,4 +1,4 @@
-# Gemini CLI Releases
+# Ionesco CLI Releases
 
 ## Release Cadence and Tags
 

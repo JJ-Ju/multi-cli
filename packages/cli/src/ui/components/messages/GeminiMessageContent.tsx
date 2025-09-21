@@ -7,12 +7,14 @@
 import type React from 'react';
 import { Box } from 'ink';
 import { MarkdownDisplay } from '../../utils/MarkdownDisplay.js';
+import { getModelMessagePrefix } from './GeminiMessage.js';
 
 interface GeminiMessageContentProps {
   text: string;
   isPending: boolean;
   availableTerminalHeight?: number;
   terminalWidth: number;
+  modelProviderId?: string;
 }
 
 /*
@@ -26,9 +28,9 @@ export const GeminiMessageContent: React.FC<GeminiMessageContentProps> = ({
   isPending,
   availableTerminalHeight,
   terminalWidth,
+  modelProviderId,
 }) => {
-  const originalPrefix = '✦ ';
-  const prefixWidth = originalPrefix.length;
+  const { width: prefixWidth } = getModelMessagePrefix(modelProviderId);
 
   return (
     <Box flexDirection="column" paddingLeft={prefixWidth}>

@@ -1,22 +1,22 @@
-# MCP servers with the Gemini CLI
+# MCP servers with the Ionesco CLI
 
-This document provides a guide to configuring and using Model Context Protocol (MCP) servers with the Gemini CLI.
+This document provides a guide to configuring and using Model Context Protocol (MCP) servers with the Ionesco CLI.
 
 ## What is an MCP server?
 
-An MCP server is an application that exposes tools and resources to the Gemini CLI through the Model Context Protocol, allowing it to interact with external systems and data sources. MCP servers act as a bridge between the Gemini model and your local environment or other services like APIs.
+An MCP server is an application that exposes tools and resources to the Ionesco CLI through the Model Context Protocol, allowing it to interact with external systems and data sources. MCP servers act as a bridge between the Gemini model and your local environment or other services like APIs.
 
-An MCP server enables the Gemini CLI to:
+An MCP server enables the Ionesco CLI to:
 
 - **Discover tools:** List available tools, their descriptions, and parameters through standardized schema definitions.
 - **Execute tools:** Call specific tools with defined arguments and receive structured responses.
-- **Access resources:** Read data from specific resources (though the Gemini CLI primarily focuses on tool execution).
+- **Access resources:** Read data from specific resources (though the Ionesco CLI primarily focuses on tool execution).
 
-With an MCP server, you can extend the Gemini CLI's capabilities to perform actions beyond its built-in features, such as interacting with databases, APIs, custom scripts, or specialized workflows.
+With an MCP server, you can extend the Ionesco CLI's capabilities to perform actions beyond its built-in features, such as interacting with databases, APIs, custom scripts, or specialized workflows.
 
 ## Core Integration Architecture
 
-The Gemini CLI integrates with MCP servers through a sophisticated discovery and execution system built into the core package (`packages/core/src/tools/`):
+The Ionesco CLI integrates with MCP servers through a sophisticated discovery and execution system built into the core package (`packages/core/src/tools/`):
 
 ### Discovery Layer (`mcp-client.ts`)
 
@@ -39,7 +39,7 @@ Each discovered MCP tool is wrapped in a `DiscoveredMCPTool` instance that:
 
 ### Transport Mechanisms
 
-The Gemini CLI supports three MCP transport types:
+The Ionesco CLI supports three MCP transport types:
 
 - **Stdio Transport:** Spawns a subprocess and communicates via stdin/stdout
 - **SSE Transport:** Connects to Server-Sent Events endpoints
@@ -47,7 +47,7 @@ The Gemini CLI supports three MCP transport types:
 
 ## How to set up your MCP server
 
-The Gemini CLI uses the `mcpServers` configuration in your `settings.json` file to locate and connect to MCP servers. This configuration supports multiple servers with different transport mechanisms.
+The Ionesco CLI uses the `mcpServers` configuration in your `settings.json` file to locate and connect to MCP servers. This configuration supports multiple servers with different transport mechanisms.
 
 ### Configure the MCP server in settings.json
 
@@ -120,7 +120,7 @@ Each server configuration supports the following properties:
 
 ### OAuth Support for Remote MCP Servers
 
-The Gemini CLI supports OAuth 2.0 authentication for remote MCP servers using SSE or HTTP transports. This enables secure access to MCP servers that require authentication.
+The Ionesco CLI supports OAuth 2.0 authentication for remote MCP servers using SSE or HTTP transports. This enables secure access to MCP servers that require authentication.
 
 #### Automatic OAuth Discovery
 
@@ -335,7 +335,7 @@ You can specify the authentication provider type using the `authProviderType` pr
 
 ## Discovery Process Deep Dive
 
-When the Gemini CLI starts, it performs MCP server discovery through the following detailed process:
+When the Ionesco CLI starts, it performs MCP server discovery through the following detailed process:
 
 ### 1. Server Iteration and Connection
 
@@ -593,7 +593,7 @@ The MCP integration tracks several states:
 - **Name sanitization:** Tool names are automatically sanitized to meet API requirements
 - **Conflict resolution:** Tool name conflicts between servers are resolved through automatic prefixing
 
-This comprehensive integration makes MCP servers a powerful way to extend the Gemini CLI's capabilities while maintaining security, reliability, and ease of use.
+This comprehensive integration makes MCP servers a powerful way to extend the Ionesco CLI's capabilities while maintaining security, reliability, and ease of use.
 
 ## Returning Rich Content from Tools
 
@@ -603,7 +603,7 @@ All data returned from the tool is processed and sent to the model as context fo
 
 ### How It Works
 
-To return rich content, your tool's response must adhere to the MCP specification for a [`CallToolResult`](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#tool-result). The `content` field of the result should be an array of `ContentBlock` objects. The Gemini CLI will correctly process this array, separating text from binary data and packaging it for the model.
+To return rich content, your tool's response must adhere to the MCP specification for a [`CallToolResult`](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#tool-result). The `content` field of the result should be an array of `ContentBlock` objects. The Ionesco CLI will correctly process this array, separating text from binary data and packaging it for the model.
 
 You can mix and match different content block types in the `content` array. The supported block types include:
 
@@ -637,7 +637,7 @@ Here is an example of a valid JSON response from an MCP tool that returns both a
 }
 ```
 
-When the Gemini CLI receives this response, it will:
+When the Ionesco CLI receives this response, it will:
 
 1.  Extract all the text and combine it into a single `functionResponse` part for the model.
 2.  Present the image data as a separate `inlineData` part.
@@ -647,7 +647,7 @@ This enables you to build sophisticated tools that can provide rich, multi-modal
 
 ## MCP Prompts as Slash Commands
 
-In addition to tools, MCP servers can expose predefined prompts that can be executed as slash commands within the Gemini CLI. This allows you to create shortcuts for common or complex queries that can be easily invoked by name.
+In addition to tools, MCP servers can expose predefined prompts that can be executed as slash commands within the Ionesco CLI. This allows you to create shortcuts for common or complex queries that can be easily invoked by name.
 
 ### Defining Prompts on the Server
 
@@ -705,20 +705,20 @@ This can be included in `settings.json` under `mcpServers` with:
 Once a prompt is discovered, you can invoke it using its name as a slash command. The CLI will automatically handle parsing arguments.
 
 ```bash
-/poem-writer --title="Gemini CLI" --mood="reverent"
+/poem-writer --title="Ionesco CLI" --mood="reverent"
 ```
 
 or, using positional arguments:
 
 ```bash
-/poem-writer "Gemini CLI" reverent
+/poem-writer "Ionesco CLI" reverent
 ```
 
-When you run this command, the Gemini CLI executes the `prompts/get` method on the MCP server with the provided arguments. The server is responsible for substituting the arguments into the prompt template and returning the final prompt text. The CLI then sends this prompt to the model for execution. This provides a convenient way to automate and share common workflows.
+When you run this command, the Ionesco CLI executes the `prompts/get` method on the MCP server with the provided arguments. The server is responsible for substituting the arguments into the prompt template and returning the final prompt text. The CLI then sends this prompt to the model for execution. This provides a convenient way to automate and share common workflows.
 
 ## Managing MCP Servers with `gemini mcp`
 
-While you can always configure MCP servers by manually editing your `settings.json` file, the Gemini CLI provides a convenient set of commands to manage your server configurations programmatically. These commands streamline the process of adding, listing, and removing MCP servers without needing to directly edit JSON files.
+While you can always configure MCP servers by manually editing your `settings.json` file, the Ionesco CLI provides a convenient set of commands to manage your server configurations programmatically. These commands streamline the process of adding, listing, and removing MCP servers without needing to directly edit JSON files.
 
 ### Adding a Server (`gemini mcp add`)
 

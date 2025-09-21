@@ -104,7 +104,7 @@ export function AuthDialog({
           console.log(
             `
 ----------------------------------------------------------------
-Logging in with Google... Please restart Gemini CLI to continue.
+Logging in with Google... Please restart Ionesco CLI to continue.
 ----------------------------------------------------------------
             `,
           );
@@ -179,7 +179,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       </Box>
       <Box marginTop={1}>
         <Text color={theme.text.primary}>
-          Terms of Services and Privacy Notice for Gemini CLI
+          Terms of Services and Privacy Notice for Ionesco CLI
         </Text>
       </Box>
       <Box marginTop={1}>

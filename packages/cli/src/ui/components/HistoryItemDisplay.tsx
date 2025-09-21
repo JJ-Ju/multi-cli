@@ -15,7 +15,7 @@ import { ToolGroupMessage } from './messages/ToolGroupMessage.js';
 import { GeminiMessageContent } from './messages/GeminiMessageContent.js';
 import { CompressionMessage } from './messages/CompressionMessage.js';
 import { WarningMessage } from './messages/WarningMessage.js';
-import { Box } from 'ink';
+import { Box, Text } from 'ink';
 import { AboutBox } from './AboutBox.js';
 import { StatsDisplay } from './StatsDisplay.js';
 import { ModelStatsDisplay } from './ModelStatsDisplay.js';
@@ -24,6 +24,20 @@ import { SessionSummaryDisplay } from './SessionSummaryDisplay.js';
 import { Help } from './Help.js';
 import type { SlashCommand } from '../commands/types.js';
 import { ExtensionsList } from './views/ExtensionsList.js';
+import { theme } from '../semantic-colors.js';
+import { getProviderDisplayName } from '../utils/providerDisplay.js';
+
+function renderProviderBadge(providerId?: string) {
+  const displayName = getProviderDisplayName(providerId);
+  if (!displayName || displayName === 'gemini') {
+    return null;
+  }
+  return (
+    <Box marginLeft={1} marginBottom={1}>
+      <Text color={theme.text.accent}>{`✦ ${displayName}`}</Text>
+    </Box>
+  );
+}
 
 interface HistoryItemDisplayProps {
   item: HistoryItem;
@@ -56,6 +70,7 @@ export const HistoryItemDisplay: React.FC<HistoryItemDisplayProps> = ({
         isPending={isPending}
         availableTerminalHeight={availableTerminalHeight}
         terminalWidth={terminalWidth}
+        modelProviderId={item.modelProviderId}
       />
     )}
     {item.type === 'gemini_content' && (
@@ -64,6 +79,7 @@ export const HistoryItemDisplay: React.FC<HistoryItemDisplayProps> = ({
         isPending={isPending}
         availableTerminalHeight={availableTerminalHeight}
         terminalWidth={terminalWidth}
+        modelProviderId={item.modelProviderId}
       />
     )}
     {item.type === 'info' && <InfoMessage text={item.text} />}
@@ -75,6 +91,7 @@ export const HistoryItemDisplay: React.FC<HistoryItemDisplayProps> = ({
         osVersion={item.osVersion}
         sandboxEnv={item.sandboxEnv}
         modelVersion={item.modelVersion}
+        modelProvider={item.modelProvider}
         selectedAuthType={item.selectedAuthType}
         gcpProject={item.gcpProject}
         ideClient={item.ideClient}
@@ -86,15 +103,18 @@ export const HistoryItemDisplay: React.FC<HistoryItemDisplayProps> = ({
     {item.type === 'tool_stats' && <ToolStatsDisplay />}
     {item.type === 'quit' && <SessionSummaryDisplay duration={item.duration} />}
     {item.type === 'tool_group' && (
-      <ToolGroupMessage
-        toolCalls={item.tools}
-        groupId={item.id}
-        availableTerminalHeight={availableTerminalHeight}
-        terminalWidth={terminalWidth}
-        isFocused={isFocused}
-        activeShellPtyId={activeShellPtyId}
-        shellFocused={shellFocused}
-      />
+      <Box flexDirection="column">
+        {renderProviderBadge(item.modelProviderId)}
+        <ToolGroupMessage
+          toolCalls={item.tools}
+          groupId={item.id}
+          availableTerminalHeight={availableTerminalHeight}
+          terminalWidth={terminalWidth}
+          isFocused={isFocused}
+          activeShellPtyId={activeShellPtyId}
+          shellFocused={shellFocused}
+        />
+      </Box>
     )}
     {item.type === 'compression' && (
       <CompressionMessage compression={item.compression} />

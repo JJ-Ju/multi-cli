@@ -1,0 +1,5 @@
+# Python dependencies required by the Grok sidecar runtime.
+# Keep this list minimal so the setup script can install everything quickly.
+
+xai-sdk
+protobuf>=4.25.0

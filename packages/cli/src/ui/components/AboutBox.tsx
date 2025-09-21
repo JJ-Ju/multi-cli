@@ -14,6 +14,7 @@ interface AboutBoxProps {
   osVersion: string;
   sandboxEnv: string;
   modelVersion: string;
+  modelProvider: string;
   selectedAuthType: string;
   gcpProject: string;
   ideClient: string;
@@ -24,6 +25,7 @@ export const AboutBox: React.FC<AboutBoxProps> = ({
   osVersion,
   sandboxEnv,
   modelVersion,
+  modelProvider,
   selectedAuthType,
   gcpProject,
   ideClient,
@@ -38,7 +40,7 @@ export const AboutBox: React.FC<AboutBoxProps> = ({
   >
     <Box marginBottom={1}>
       <Text bold color={theme.text.accent}>
-        About Gemini CLI
+        About Ionesco CLI
       </Text>
     </Box>
     <Box flexDirection="row">
@@ -63,6 +65,16 @@ export const AboutBox: React.FC<AboutBoxProps> = ({
         </Box>
       </Box>
     )}
+    <Box flexDirection="row">
+      <Box width="35%">
+        <Text bold color={theme.text.link}>
+          Provider
+        </Text>
+      </Box>
+      <Box>
+        <Text color={theme.text.primary}>{modelProvider}</Text>
+      </Box>
+    </Box>
     <Box flexDirection="row">
       <Box width="35%">
         <Text bold color={theme.text.link}>

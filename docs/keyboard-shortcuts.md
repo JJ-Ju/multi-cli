@@ -1,6 +1,6 @@
-# Gemini CLI Keyboard Shortcuts
+# Ionesco CLI Keyboard Shortcuts
 
-This document lists the available keyboard shortcuts in the Gemini CLI.
+This document lists the available keyboard shortcuts in the Ionesco CLI.
 
 ## General
 

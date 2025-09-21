@@ -28,6 +28,8 @@ import type {
 } from '../types.js';
 import { ToolCallStatus } from '../types.js';
 
+type ResultDisplay = IndividualToolCallDisplay['resultDisplay'];
+
 export type ScheduleFn = (
   request: ToolCallRequestInfo | ToolCallRequestInfo[],
   signal: AbortSignal,
@@ -241,28 +243,49 @@ export function mapToDisplay(
       };
 
       switch (trackedCall.status) {
-        case 'success':
+        case 'success': {
+          const successDisplay = formatToolResultDisplay(
+            trackedCall.response.resultDisplay,
+          );
           return {
             ...baseDisplayProperties,
             status: mapCoreStatusToDisplayStatus(trackedCall.status),
-            resultDisplay: trackedCall.response.resultDisplay,
+            renderOutputAsMarkdown:
+              baseDisplayProperties.renderOutputAsMarkdown ||
+              successDisplay.preferMarkdown,
+            resultDisplay: successDisplay.display,
             confirmationDetails: undefined,
             outputFile: trackedCall.response.outputFile,
           };
-        case 'error':
+        }
+        case 'error': {
+          const errorDisplay = formatToolResultDisplay(
+            trackedCall.response.resultDisplay,
+          );
           return {
             ...baseDisplayProperties,
             status: mapCoreStatusToDisplayStatus(trackedCall.status),
-            resultDisplay: trackedCall.response.resultDisplay,
+            renderOutputAsMarkdown:
+              baseDisplayProperties.renderOutputAsMarkdown ||
+              errorDisplay.preferMarkdown,
+            resultDisplay: errorDisplay.display,
             confirmationDetails: undefined,
           };
-        case 'cancelled':
+        }
+        case 'cancelled': {
+          const cancelledDisplay = formatToolResultDisplay(
+            trackedCall.response.resultDisplay,
+          );
           return {
             ...baseDisplayProperties,
             status: mapCoreStatusToDisplayStatus(trackedCall.status),
-            resultDisplay: trackedCall.response.resultDisplay,
+            renderOutputAsMarkdown:
+              baseDisplayProperties.renderOutputAsMarkdown ||
+              cancelledDisplay.preferMarkdown,
+            resultDisplay: cancelledDisplay.display,
             confirmationDetails: undefined,
           };
+        }
         case 'awaiting_approval':
           return {
             ...baseDisplayProperties,
@@ -307,4 +330,117 @@ export function mapToDisplay(
     type: 'tool_group',
     tools: toolDisplays,
   };
+}
+
+function formatToolResultDisplay(resultDisplay: ResultDisplay): {
+  display: ResultDisplay;
+  preferMarkdown: boolean;
+} {
+  if (typeof resultDisplay !== 'string') {
+    return { display: resultDisplay, preferMarkdown: false };
+  }
+
+  const jsonFormatted = tryFormatJson(resultDisplay);
+  if (jsonFormatted) {
+    return { display: jsonFormatted, preferMarkdown: true };
+  }
+
+  const streamFormatted = formatStreamSections(resultDisplay);
+  if (streamFormatted) {
+    return { display: streamFormatted, preferMarkdown: true };
+  }
+
+  return { display: resultDisplay, preferMarkdown: false };
+}
+
+function tryFormatJson(value: string): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  if (trimmed.startsWith('```')) {
+    return undefined;
+  }
+  const startsWithStructure =
+    trimmed.startsWith('{') || trimmed.startsWith('[');
+  if (!startsWithStructure) {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(trimmed);
+    return `\`\`\`json\n${JSON.stringify(parsed, null, 2)}\n\`\`\``;
+  } catch {
+    return undefined;
+  }
+}
+
+function formatStreamSections(value: string): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  if (value.includes('```')) {
+    return undefined;
+  }
+
+  const lower = value.toLowerCase();
+  if (!lower.includes('stdout') && !lower.includes('stderr')) {
+    return undefined;
+  }
+
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+  const other: string[] = [];
+  let current: 'stdout' | 'stderr' | 'other' = 'other';
+
+  for (const line of value.split(/\r?\n/)) {
+    const stdoutMatch = line.match(/^\s*stdout\s*:\s*(.*)$/i);
+    if (stdoutMatch) {
+      current = 'stdout';
+      if (stdoutMatch[1]) {
+        stdout.push(stdoutMatch[1]);
+      }
+      continue;
+    }
+    const stderrMatch = line.match(/^\s*stderr\s*:\s*(.*)$/i);
+    if (stderrMatch) {
+      current = 'stderr';
+      if (stderrMatch[1]) {
+        stderr.push(stderrMatch[1]);
+      }
+      continue;
+    }
+
+    switch (current) {
+      case 'stdout':
+        stdout.push(line);
+        break;
+      case 'stderr':
+        stderr.push(line);
+        break;
+      default:
+        other.push(line);
+    }
+  }
+
+  if (stdout.length === 0 && stderr.length === 0) {
+    return undefined;
+  }
+
+  const sections: string[] = [];
+  const otherText = other.join('\n').trim();
+  if (otherText) {
+    sections.push(otherText);
+  }
+
+  if (stdout.length > 0) {
+    const text = stdout.join('\n').trim() || '(empty)';
+    sections.push(`**stdout**\n\`\`\`\n${text}\n\`\`\``);
+  }
+
+  if (stderr.length > 0) {
+    const text = stderr.join('\n').trim() || '(empty)';
+    sections.push(`**stderr**\n\`\`\`\n${text}\n\`\`\``);
+  }
+
+  return sections.join('\n\n');
 }

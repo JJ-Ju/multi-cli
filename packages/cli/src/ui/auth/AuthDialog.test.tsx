@@ -209,7 +209,7 @@ describe('AuthDialog', () => {
 
       expect(mockedRunExitCleanup).toHaveBeenCalled();
       expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Please restart Gemini CLI'),
+        expect.stringContaining('Please restart Ionesco CLI'),
       );
       expect(exitSpy).toHaveBeenCalledWith(0);
 

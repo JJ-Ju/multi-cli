@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# This script creates an alias for the Gemini CLI
+# This script creates an alias for the Ionesco CLI (legacy gemini command)
 
 # Determine the project directory
 PROJECT_DIR=$(cd "$(dirname "$0")/.." && pwd)

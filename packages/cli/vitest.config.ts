@@ -6,15 +6,24 @@
 
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config';
+import path from 'node:path';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@google/gemini-cli-core': path.resolve(
+        __dirname,
+        '../core/src/index.ts',
+      ),
+    },
+  },
   test: {
     include: ['**/*.{test,spec}.?(c|m)[jt]s?(x)', 'config.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/cypress/**'],
     environment: 'jsdom',
     globals: true,
     reporters: ['default', 'junit'],
-    silent: true,
+    silent: false,
     outputFile: {
       junit: 'junit.xml',
     },

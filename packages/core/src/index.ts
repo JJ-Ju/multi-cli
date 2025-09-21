@@ -62,6 +62,12 @@ export * from './services/gitService.js';
 export * from './services/chatRecordingService.js';
 export * from './services/fileSystemService.js';
 
+// Export provider abstractions
+export * from './providers/types.js';
+export { ModelProviderRegistryImpl } from './providers/modelProviderRegistry.js';
+export { GrokProvider } from './providers/grokProvider.js';
+export { logGrokDebug } from './providers/grokDebugLogger.js';
+
 // Export IDE specific logic
 export * from './ide/ide-client.js';
 export * from './ide/ideContext.js';
