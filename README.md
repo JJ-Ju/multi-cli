@@ -18,6 +18,10 @@ Ionesco CLI is an open-source AI agent (formerly known as Gemini CLI) that bring
 - **💻 Terminal-first**: Designed for developers who live in the command line
 - **🛡️ Open source**: Apache 2.0 licensed
 
+## Attribution
+
+Ionesco CLI builds on the open-source [Gemini CLI](https://github.com/google-gemini/gemini-cli) project from Google LLC and remains distributed under the Apache License 2.0. All original LICENSE terms and copyright notices are preserved in this repository.
+
 ## 📦 Installation
 
 ### Quick Install
