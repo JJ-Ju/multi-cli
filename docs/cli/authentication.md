@@ -2,6 +2,8 @@
 
 The Ionesco CLI requires you to authenticate with Google's AI services. On initial startup you'll need to configure **one** of the following authentication methods:
 
+> Looking for the xAI Grok provider? Supply `GROK_API_KEY` as described in [providers/grok.md](../providers/grok.md).
+
 1.  **Login with Google (Gemini Code Assist):**
     - Use this option to log in with your Google account.
     - During initial startup, Ionesco CLI will direct you to a webpage for authentication. Once authenticated, your credentials will be cached locally so the web login can be skipped on subsequent runs.

@@ -1,6 +1,6 @@
 # Ionesco CLI
 
-Within Ionesco CLI, `packages/cli` is the frontend for users to send and receive prompts with the Gemini AI model and its associated tools. For a general overview of Ionesco CLI, see the [main documentation page](../index.md).
+Within Ionesco CLI, `packages/cli` is the frontend for users to send and receive prompts with the configured model provider (Gemini by default) and its associated tools. For a general overview of Ionesco CLI, see the [main documentation page](../index.md).
 
 ## Navigating this section
 
@@ -12,6 +12,7 @@ Within Ionesco CLI, `packages/cli` is the frontend for users to send and receive
 - **[Token Caching](./token-caching.md):** Optimize API costs through token caching.
 - **[Themes](./themes.md)**: A guide to customizing the CLI's appearance with different themes.
 - **[Tutorials](tutorials.md)**: A tutorial showing how to use Ionesco CLI to automate a development task.
+- **[Grok Provider](../providers/grok.md)**: Configure the experimental xAI Grok backend.
 
 ## Non-interactive mode
 
@@ -20,13 +21,15 @@ Ionesco CLI can be run in a non-interactive mode, which is useful for scripting 
 The following example pipes a command to Ionesco CLI from your terminal:
 
 ```bash
-echo "What is fine tuning?" | gemini
+echo "What is fine tuning?" | npm run start -- --prompt-from-stdin
 ```
 
 You can also use the `--prompt` or `-p` flag:
 
 ```bash
-gemini -p "What is fine tuning?"
+npm run start -- --prompt "What is fine tuning?"
 ```
+
+> If you created the optional alias via `./scripts/create_alias.sh`, you can continue to run `gemini -p ...` instead of forwarding flags through `npm run start`.
 
 For comprehensive documentation on headless usage, scripting, automation, and advanced examples, see the **[Headless Mode](../headless.md)** guide.

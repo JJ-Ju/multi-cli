@@ -400,6 +400,15 @@ The CLI automatically loads environment variables from an `.env` file. The loadi
   - Specifies the default Gemini model to use.
   - Overrides the hardcoded default
   - Example: `export GEMINI_MODEL="gemini-2.5-flash"`
+- **`GROK_API_KEY`**:
+  - API key for the xAI Grok provider sidecar. Required before activating `/agent use grok`.
+  - Example: `export GROK_API_KEY="sk-your-secret"`
+- **`GROK_MODEL`**/**`GROK_MODEL_ID`**:
+  - Preferred Grok model identifier. If unset, defaults to `grok-4-fast-reasoning-latest`.
+- **`GROK_PYTHON_BIN`**:
+  - Optional path to the Python 3.10+ interpreter used for the sidecar. Overrides auto-detection.
+- **`GROK_DEBUG_LOG_FILE`**:
+  - Overrides the default `grok-debug.log` location for sidecar logging.
 - **`GOOGLE_API_KEY`**:
   - Your Google Cloud API key.
   - Required for using Vertex AI in express mode.
@@ -454,7 +463,7 @@ Arguments passed directly when running the CLI can override other configurations
   - Starts an interactive session with the provided prompt as the initial input.
   - The prompt is processed within the interactive session, not before it.
   - Cannot be used when piping input from stdin.
-  - Example: `gemini -i "explain this code"`
+  - Example: `npm run start -- --prompt-interactive "explain this code"`
 - **`--output-format <format>`**:
   - **Description:** Specifies the format of the CLI output for non-interactive mode.
   - **Values:**

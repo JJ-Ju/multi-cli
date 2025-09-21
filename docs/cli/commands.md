@@ -64,6 +64,13 @@ Slash commands provide meta-level control over the CLI itself.
 - **`/extensions`**
   - **Description:** Lists all active extensions in the current Ionesco CLI session. See [Ionesco CLI Extensions](../extension.md).
 
+- **`/agent`**
+  - **Description:** Inspect and switch between available model providers (for example Google Gemini vs. xAI Grok).
+  - **Sub-commands:**
+    - **`list`** – display configured providers and highlight the active one.
+    - **`use <providerId>`** – activate a provider (`/agent use grok`).
+  - **Notes:** Provider availability depends on environment variables and validation during startup. The active provider is shown in the footer and session summary.
+
 - **`/help`** (or **`/?`**)
   - **Description:** Display help information about Ionesco CLI, including available commands and their usage.
 
