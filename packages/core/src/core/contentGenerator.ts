@@ -11,6 +11,7 @@ import type {
   CountTokensParameters,
   EmbedContentResponse,
   EmbedContentParameters,
+  Part,
 } from '@google/genai';
 import { GoogleGenAI } from '@google/genai';
 import { createCodeAssistContentGenerator } from '../code_assist/codeAssist.js';
@@ -39,6 +40,12 @@ export interface ContentGenerator {
   embedContent(request: EmbedContentParameters): Promise<EmbedContentResponse>;
 
   userTier?: UserTierId;
+
+  submitToolResult?(
+    callId: string,
+    responseParts: Part[],
+    isError: boolean,
+  ): Promise<boolean>;
 }
 
 export enum AuthType {

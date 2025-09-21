@@ -57,6 +57,7 @@ const logger = {
 
 export interface CliArgs {
   model: string | undefined;
+  modelProvider: string | undefined;
   sandbox: boolean | string | undefined;
   sandboxImage: string | undefined;
   debug: boolean | undefined;
@@ -170,6 +171,10 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
           alias: 'm',
           type: 'string',
           description: `Model`,
+        })
+        .option('model-provider', {
+          type: 'string',
+          description: 'Model provider identifier (e.g. google-genai).',
         })
         .option('prompt', {
           alias: 'p',
@@ -562,6 +567,14 @@ export async function loadCliConfig(
     settings.model?.name ||
     defaultModel;
 
+  const resolvedModelProvider = [
+    argv.modelProvider,
+    process.env['GEMINI_MODEL_PROVIDER'],
+    settings.model?.provider,
+  ]
+    .map((value) => (typeof value === 'string' ? value.trim() : undefined))
+    .find((value) => value);
+
   const sandboxConfig = await loadSandboxConfig(settings, argv);
   const screenReader =
     argv.screenReader !== undefined
@@ -653,6 +666,7 @@ export async function loadCliConfig(
       format: (argv.outputFormat ?? settings.output?.format) as OutputFormat,
     },
     useModelRouter,
+    modelProviderId: resolvedModelProvider,
   });
 }
 

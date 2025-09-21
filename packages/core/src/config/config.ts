@@ -10,11 +10,8 @@ import type {
   ContentGenerator,
   ContentGeneratorConfig,
 } from '../core/contentGenerator.js';
-import {
-  AuthType,
-  createContentGenerator,
-  createContentGeneratorConfig,
-} from '../core/contentGenerator.js';
+import type { Part } from '@google/genai';
+import { AuthType } from '../core/contentGenerator.js';
 import { PromptRegistry } from '../prompts/prompt-registry.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import { LSTool } from '../tools/ls.js';
@@ -30,7 +27,7 @@ import { WebFetchTool } from '../tools/web-fetch.js';
 import { ReadManyFilesTool } from '../tools/read-many-files.js';
 import { MemoryTool, setGeminiMdFilename } from '../tools/memoryTool.js';
 import { WebSearchTool } from '../tools/web-search.js';
-import { GeminiClient } from '../core/client.js';
+import type { GeminiClient } from '../core/client.js';
 import { BaseLlmClient } from '../core/baseLlmClient.js';
 import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
 import { GitService } from '../services/gitService.js';
@@ -75,6 +72,8 @@ import { PolicyEngine } from '../policy/policy-engine.js';
 import type { PolicyEngineConfig } from '../policy/types.js';
 import type { UserTierId } from '../code_assist/types.js';
 import { ProxyAgent, setGlobalDispatcher } from 'undici';
+import { ModelProviderRegistryImpl } from '../providers/modelProviderRegistry.js';
+import type { ModelProvider, ProviderRegistry } from '../providers/types.js';
 
 export enum ApprovalMode {
   DEFAULT = 'default',
@@ -250,6 +249,7 @@ export interface ConfigParameters {
   policyEngineConfig?: PolicyEngineConfig;
   output?: OutputSettings;
   useModelRouter?: boolean;
+  modelProviderId?: string;
 }
 
 export class Config {
@@ -282,6 +282,12 @@ export class Config {
   private readonly usageStatisticsEnabled: boolean;
   private geminiClient!: GeminiClient;
   private baseLlmClient!: BaseLlmClient;
+  private readonly providerAuthTypeCache = new Map<
+    string,
+    AuthType | undefined
+  >();
+  private readonly modelProviderRegistry: ProviderRegistry;
+  private modelProvider!: ModelProvider;
   private modelRouterService: ModelRouterService;
   private readonly fileFiltering: {
     respectGitIgnore: boolean;
@@ -445,10 +451,27 @@ export class Config {
       initializeTelemetry(this);
     }
 
+    this.modelProviderRegistry = new ModelProviderRegistryImpl();
+    if (params.modelProviderId) {
+      const provider = this.modelProviderRegistry.getProvider(
+        params.modelProviderId,
+      );
+      if (!provider) {
+        throw new Error(
+          `Unknown model provider requested: ${params.modelProviderId}`,
+        );
+      }
+      this.modelProvider = provider;
+    } else {
+      this.modelProvider = this.modelProviderRegistry.getDefaultProvider();
+    }
+
+    this.synchronizeModelWithProvider();
+
     if (this.getProxy()) {
       setGlobalDispatcher(new ProxyAgent(this.getProxy() as string));
     }
-    this.geminiClient = new GeminiClient(this);
+    this.geminiClient = this.modelProvider.createConversationClient(this);
     this.modelRouterService = new ModelRouterService(this);
   }
 
@@ -476,6 +499,118 @@ export class Config {
     return this.contentGenerator;
   }
 
+  async submitToolResult(
+    callId: string,
+    responseParts: Part[],
+    isError: boolean,
+  ): Promise<boolean> {
+    const generator = this.getContentGenerator();
+    if (typeof generator.submitToolResult === 'function') {
+      return generator.submitToolResult(callId, responseParts, isError);
+    }
+    return false;
+  }
+
+  getModelProvider(): ModelProvider {
+    return this.modelProvider;
+  }
+
+  getModelProviderId(): string {
+    return this.modelProvider.id;
+  }
+
+  listModelProviders(): readonly ModelProvider[] {
+    return this.modelProviderRegistry.listProviders();
+  }
+
+  async setModelProvider(providerId: string): Promise<void> {
+    const provider = this.modelProviderRegistry.getProvider(providerId);
+    if (!provider) {
+      throw new Error(`Unknown model provider: ${providerId}`);
+    }
+
+    if (provider.id === this.modelProvider.id) {
+      return;
+    }
+
+    const previousProvider = this.modelProvider;
+    const previousGeminiClient = this.geminiClient;
+    const previousContentGeneratorConfig = this.contentGeneratorConfig;
+    const previousContentGenerator = this.contentGenerator;
+    const previousBaseLlmClient = this.baseLlmClient;
+    const previousModel = this.model;
+
+    if (previousContentGeneratorConfig) {
+      this.providerAuthTypeCache.set(
+        this.modelProvider.id,
+        previousContentGeneratorConfig.authType,
+      );
+    }
+
+    this.modelProvider = provider;
+
+    this.synchronizeModelWithProvider(true);
+
+    const newConversationClient =
+      this.modelProvider.createConversationClient(this);
+
+    let newContentGeneratorConfig: ContentGeneratorConfig | undefined;
+    let newContentGenerator: ContentGenerator | undefined;
+    let newBaseLlmClient: BaseLlmClient | undefined;
+
+    try {
+      const cachedAuthType = this.providerAuthTypeCache.get(provider.id);
+      let desiredAuthType =
+        cachedAuthType ?? previousContentGeneratorConfig?.authType;
+      if (!desiredAuthType && provider.id === 'google-genai') {
+        desiredAuthType = AuthType.USE_GEMINI;
+      }
+
+      newContentGeneratorConfig =
+        this.modelProvider.createContentGeneratorConfig(this, desiredAuthType);
+
+      if (previousContentGeneratorConfig || previousContentGenerator) {
+        newContentGenerator = await this.modelProvider.createContentGenerator(
+          newContentGeneratorConfig,
+          this,
+          this.getSessionId(),
+        );
+        newBaseLlmClient = new BaseLlmClient(newContentGenerator, this);
+      }
+    } catch (error) {
+      this.modelProvider = previousProvider;
+      this.geminiClient = previousGeminiClient;
+      this.contentGeneratorConfig = previousContentGeneratorConfig;
+      if (previousContentGenerator) {
+        this.contentGenerator = previousContentGenerator;
+      }
+      if (previousBaseLlmClient) {
+        this.baseLlmClient = previousBaseLlmClient;
+      }
+      this.model = previousModel;
+      throw error;
+    }
+
+    if (newContentGeneratorConfig) {
+      this.contentGeneratorConfig = newContentGeneratorConfig;
+      this.providerAuthTypeCache.set(
+        provider.id,
+        newContentGeneratorConfig.authType,
+      );
+    }
+    if (newContentGenerator) {
+      this.contentGenerator = newContentGenerator;
+    }
+    if (newBaseLlmClient) {
+      this.baseLlmClient = newBaseLlmClient;
+    }
+
+    this.geminiClient = newConversationClient;
+    if (this.initialized) {
+      await this.geminiClient.initialize();
+    }
+  }
+
   async refreshAuth(authMethod: AuthType) {
     // Vertex and Genai have incompatible encryption and sending history with
     // throughtSignature from Genai to Vertex will fail, we need to strip them
@@ -487,17 +622,19 @@ export class Config {
       this.geminiClient.stripThoughtsFromHistory();
     }
 
-    const newContentGeneratorConfig = createContentGeneratorConfig(
-      this,
-      authMethod,
-    );
-    this.contentGenerator = await createContentGenerator(
+    const newContentGeneratorConfig =
+      this.modelProvider.createContentGeneratorConfig(this, authMethod);
+    this.contentGenerator = await this.modelProvider.createContentGenerator(
       newContentGeneratorConfig,
       this,
       this.getSessionId(),
     );
     // Only assign to instance properties after successful initialization
     this.contentGeneratorConfig = newContentGeneratorConfig;
+    this.providerAuthTypeCache.set(
+      this.modelProvider.id,
+      newContentGeneratorConfig.authType,
+    );
 
     // Initialize BaseLlmClient now that the ContentGenerator is available
     this.baseLlmClient = new BaseLlmClient(this.contentGenerator, this);
@@ -556,6 +693,23 @@ export class Config {
     }
 
     this.model = newModel;
+  }
+
+  private synchronizeModelWithProvider(forceDefault: boolean = false): void {
+    const defaultModelId = this.modelProvider.getDefaultModelId();
+
+    const currentModel = this.model;
+    const hasModel =
+      typeof currentModel === 'string' && currentModel.trim().length > 0;
+    const modelSupported = hasModel
+      ? this.modelProvider.isModelSupported(currentModel)
+      : false;
+
+    if (forceDefault || !modelSupported) {
+      if (currentModel !== defaultModelId) {
+        this.setModel(defaultModelId);
+      }
+    }
   }
 
   isInFallbackMode(): boolean {

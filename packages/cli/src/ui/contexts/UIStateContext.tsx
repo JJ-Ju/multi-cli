@@ -90,6 +90,7 @@ export interface UIState {
   userTier: UserTierId | undefined;
   proQuotaRequest: ProQuotaDialogRequest | null;
   currentModel: string;
+  currentModelProvider: string;
   contextFileNames: string[];
   errorCount: number;
   availableTerminalHeight: number | undefined;

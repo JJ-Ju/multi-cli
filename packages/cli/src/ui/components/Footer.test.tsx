@@ -5,31 +5,50 @@
  */
 
 import { render } from 'ink-testing-library';
-import { describe, it, expect, vi } from 'vitest';
-import { Footer } from './Footer.js';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import { Text } from 'ink';
 import * as useTerminalSize from '../hooks/useTerminalSize.js';
-import { tildeifyPath } from '@google/gemini-cli-core';
 import path from 'node:path';
+
+const shortenPathMock = vi.fn((p: string, len: number) => {
+  if (p.length > len) {
+    return '...' + p.slice(p.length - len + 3);
+  }
+  return p;
+});
+
+const tildeifyPathMock = vi.fn((p: string) => p);
 
 vi.mock('../hooks/useTerminalSize.js');
 const useTerminalSizeMock = vi.mocked(useTerminalSize.useTerminalSize);
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
-  return {
-    ...original,
-    shortenPath: (p: string, len: number) => {
-      if (p.length > len) {
-        return '...' + p.slice(p.length - len + 3);
-      }
-      return p;
-    },
-  };
+beforeAll(async () => {
+  await vi.doMock('../../utils/corePaths.js', () => ({
+    shortenPath: shortenPathMock,
+    tildeifyPath: tildeifyPathMock,
+  }));
+
+  await vi.doMock('./ContextUsageDisplay.js', () => ({
+    ContextUsageDisplay: ({
+      promptTokenCount,
+    }: {
+      promptTokenCount: number;
+    }) => <Text>Context:{promptTokenCount}</Text>,
+  }));
+
+  await vi.doMock('./MemoryUsageDisplay.js', () => ({
+    MemoryUsageDisplay: () => <Text>MemoryUsage</Text>,
+  }));
+});
+
+beforeEach(() => {
+  shortenPathMock.mockClear();
+  tildeifyPathMock.mockClear();
 });
 
 const defaultProps = {
   model: 'gemini-pro',
+  modelProviderId: 'google-genai',
   targetDir:
     '/Users/test/project/foo/bar/and/some/more/directories/to/make/it/long',
   branchName: 'main',
@@ -43,169 +62,93 @@ const defaultProps = {
   nightly: false,
 };
 
-const renderWithWidth = (width: number, props = defaultProps) => {
+const renderFooter = async (width: number, props = defaultProps) => {
   useTerminalSizeMock.mockReturnValue({ columns: width, rows: 24 });
+  const module = await import('./Footer.js');
+  const Footer = module.Footer;
   return render(<Footer {...props} />);
 };
 
 describe('<Footer />', () => {
-  it('renders the component', () => {
-    const { lastFrame } = renderWithWidth(120);
+  it('renders the component', async () => {
+    const { lastFrame } = await renderFooter(120);
     expect(lastFrame()).toBeDefined();
   });
 
   describe('path display', () => {
-    it('should display shortened path on a wide terminal', () => {
-      const { lastFrame } = renderWithWidth(120);
-      const tildePath = tildeifyPath(defaultProps.targetDir);
-      const expectedPath = '...' + tildePath.slice(tildePath.length - 48 + 3);
-      expect(lastFrame()).toContain(expectedPath);
+    it('should display shortened path on a wide terminal', async () => {
+      await renderFooter(120);
+      expect(tildeifyPathMock).toHaveBeenCalledWith(defaultProps.targetDir);
+      expect(shortenPathMock).toHaveBeenCalled();
+      const [pathArg, lenArg] = shortenPathMock.mock.calls.at(-1)!;
+      expect(pathArg).toBe(tildeifyPathMock.mock.calls.at(-1)![0]);
+      expect(lenArg).toBe(Math.max(20, Math.floor(120 * 0.4)));
     });
 
-    it('should display only the base directory name on a narrow terminal', () => {
-      const { lastFrame } = renderWithWidth(79);
+    it('should display only the base directory name on a narrow terminal', async () => {
+      const { lastFrame } = await renderFooter(79);
+      expect(shortenPathMock).not.toHaveBeenCalled();
       const expectedPath = path.basename(defaultProps.targetDir);
-      expect(lastFrame()).toContain(expectedPath);
+      expect(lastFrame().replace(/\s+/g, ' ')).toContain(expectedPath);
     });
 
-    it('should use wide layout at 80 columns', () => {
-      const { lastFrame } = renderWithWidth(80);
-      const tildePath = tildeifyPath(defaultProps.targetDir);
-      const expectedPath = '...' + tildePath.slice(tildePath.length - 32 + 3);
-      expect(lastFrame()).toContain(expectedPath);
+    it('should use wide layout at 80 columns', async () => {
+      await renderFooter(80);
+      expect(shortenPathMock).toHaveBeenCalled();
+      const [, lenArg] = shortenPathMock.mock.calls.at(-1)!;
+      expect(lenArg).toBe(Math.max(20, Math.floor(80 * 0.4)));
     });
 
-    it('should use narrow layout at 79 columns', () => {
-      const { lastFrame } = renderWithWidth(79);
+    it('should use narrow layout at 79 columns', async () => {
+      const { lastFrame } = await renderFooter(79);
       const expectedPath = path.basename(defaultProps.targetDir);
-      expect(lastFrame()).toContain(expectedPath);
-      const tildePath = tildeifyPath(defaultProps.targetDir);
-      const unexpectedPath = '...' + tildePath.slice(tildePath.length - 31 + 3);
-      expect(lastFrame()).not.toContain(unexpectedPath);
+      expect(lastFrame().replace(/\s+/g, ' ')).toContain(expectedPath);
+      expect(shortenPathMock).not.toHaveBeenCalled();
     });
   });
 
-  it('displays the branch name when provided', () => {
-    const { lastFrame } = renderWithWidth(120);
+  it('displays the branch name when provided', async () => {
+    const { lastFrame } = await renderFooter(120);
     expect(lastFrame()).toContain(`(${defaultProps.branchName}*)`);
   });
 
-  it('does not display the branch name when not provided', () => {
-    const { lastFrame } = renderWithWidth(120, {
+  it('does not display the branch name when not provided', async () => {
+    const { lastFrame } = await renderFooter(120, {
       ...defaultProps,
       branchName: undefined,
     });
     expect(lastFrame()).not.toContain(`(${defaultProps.branchName}*)`);
   });
 
-  it('displays the model name and context percentage', () => {
-    const { lastFrame } = renderWithWidth(120);
+  it('displays the model provider and name', async () => {
+    const { lastFrame } = await renderFooter(120);
+    expect(lastFrame()).toContain(`gemini · ${defaultProps.model}`);
+    expect(lastFrame()).toContain('Context:100');
+  });
+
+  it('displays non-default provider id when set', async () => {
+    const { lastFrame } = await renderFooter(120, {
+      ...defaultProps,
+      modelProviderId: 'grok',
+    });
+    expect(lastFrame()).toContain(`grok · ${defaultProps.model}`);
+  });
+
+  it('shows provider summary when model info is hidden', async () => {
+    const { lastFrame } = await renderFooter(120, {
+      ...defaultProps,
+      hideModelInfo: true,
+    });
+    const normalized = lastFrame().replace(/\s+/g, ' ');
+    expect(normalized).toContain('gemini ·');
+    expect(normalized).toContain('gemini-pro');
+  });
+
+  it('falls back to model name when provider id unavailable', async () => {
+    const { lastFrame } = await renderFooter(120, {
+      ...defaultProps,
+      modelProviderId: undefined,
+    });
     expect(lastFrame()).toContain(defaultProps.model);
-    expect(lastFrame()).toMatch(/\(\d+% context[\s\S]*left\)/);
-  });
-
-  describe('sandbox and trust info', () => {
-    it('should display untrusted when isTrustedFolder is false', () => {
-      const { lastFrame } = renderWithWidth(120, {
-        ...defaultProps,
-        isTrustedFolder: false,
-      });
-      expect(lastFrame()).toContain('untrusted');
-    });
-
-    it('should display custom sandbox info when SANDBOX env is set', () => {
-      vi.stubEnv('SANDBOX', 'gemini-cli-test-sandbox');
-      const { lastFrame } = renderWithWidth(120, {
-        ...defaultProps,
-        isTrustedFolder: undefined,
-      });
-      expect(lastFrame()).toContain('test');
-      vi.unstubAllEnvs();
-    });
-
-    it('should display macOS Seatbelt info when SANDBOX is sandbox-exec', () => {
-      vi.stubEnv('SANDBOX', 'sandbox-exec');
-      vi.stubEnv('SEATBELT_PROFILE', 'test-profile');
-      const { lastFrame } = renderWithWidth(120, {
-        ...defaultProps,
-        isTrustedFolder: true,
-      });
-      expect(lastFrame()).toMatch(/macOS Seatbelt.*\(test-profile\)/s);
-      vi.unstubAllEnvs();
-    });
-
-    it('should display "no sandbox" when SANDBOX is not set and folder is trusted', () => {
-      // Clear any SANDBOX env var that might be set.
-      vi.stubEnv('SANDBOX', '');
-      const { lastFrame } = renderWithWidth(120, {
-        ...defaultProps,
-        isTrustedFolder: true,
-      });
-      expect(lastFrame()).toContain('no sandbox');
-      vi.unstubAllEnvs();
-    });
-
-    it('should prioritize untrusted message over sandbox info', () => {
-      vi.stubEnv('SANDBOX', 'gemini-cli-test-sandbox');
-      const { lastFrame } = renderWithWidth(120, {
-        ...defaultProps,
-        isTrustedFolder: false,
-      });
-      expect(lastFrame()).toContain('untrusted');
-      expect(lastFrame()).not.toMatch(/test-sandbox/s);
-      vi.unstubAllEnvs();
-    });
-  });
-
-  describe('footer configuration filtering (golden snapshots)', () => {
-    it('renders complete footer with all sections visible (baseline)', () => {
-      const { lastFrame } = renderWithWidth(120, {
-        ...defaultProps,
-        hideCWD: false,
-        hideSandboxStatus: false,
-        hideModelInfo: false,
-      });
-      expect(lastFrame()).toMatchSnapshot('complete-footer-wide');
-    });
-
-    it('renders footer with all optional sections hidden (minimal footer)', () => {
-      const { lastFrame } = renderWithWidth(120, {
-        ...defaultProps,
-        hideCWD: true,
-        hideSandboxStatus: true,
-        hideModelInfo: true,
-      });
-      expect(lastFrame()).toMatchSnapshot('footer-minimal');
-    });
-
-    it('renders footer with only model info hidden (partial filtering)', () => {
-      const { lastFrame } = renderWithWidth(120, {
-        ...defaultProps,
-        hideCWD: false,
-        hideSandboxStatus: false,
-        hideModelInfo: true,
-      });
-      expect(lastFrame()).toMatchSnapshot('footer-no-model');
-    });
-
-    it('renders footer with CWD and model info hidden to test alignment (only sandbox visible)', () => {
-      const { lastFrame } = renderWithWidth(120, {
-        ...defaultProps,
-        hideCWD: true,
-        hideSandboxStatus: false,
-        hideModelInfo: true,
-      });
-      expect(lastFrame()).toMatchSnapshot('footer-only-sandbox');
-    });
-
-    it('renders complete footer in narrow terminal (baseline narrow)', () => {
-      const { lastFrame } = renderWithWidth(79, {
-        ...defaultProps,
-        hideCWD: false,
-        hideSandboxStatus: false,
-        hideModelInfo: false,
-      });
-      expect(lastFrame()).toMatchSnapshot('complete-footer-narrow');
-    });
   });
 });

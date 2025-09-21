@@ -7,28 +7,36 @@
 import type React from 'react';
 import { Box, Text } from 'ink';
 import { theme } from '../semantic-colors.js';
+import { getProviderDisplayName } from '../utils/providerDisplay.js';
 
 interface ConsoleSummaryDisplayProps {
   errorCount: number;
-  // logCount is not currently in the plan to be displayed in summary
+  modelProviderId?: string;
+  model: string;
 }
 
 export const ConsoleSummaryDisplay: React.FC<ConsoleSummaryDisplayProps> = ({
   errorCount,
+  modelProviderId,
+  model,
 }) => {
-  if (errorCount === 0) {
-    return null;
-  }
-
+  const providerLabel =
+    modelProviderId &&
+    (getProviderDisplayName(modelProviderId) ?? modelProviderId);
+  const providerDisplay = providerLabel ? `${providerLabel} · ${model}` : model;
   const errorIcon = '\u2716'; // Heavy multiplication x (✖)
 
   return (
-    <Box>
+    <Box alignItems="center">
+      <Text color={theme.text.secondary}>{providerDisplay}</Text>
       {errorCount > 0 && (
-        <Text color={theme.status.error}>
-          {errorIcon} {errorCount} error{errorCount > 1 ? 's' : ''}{' '}
-          <Text color={theme.text.secondary}>(ctrl+o for details)</Text>
-        </Text>
+        <Box marginLeft={1}>
+          <Text color={theme.ui.comment}>| </Text>
+          <Text color={theme.status.error}>
+            {errorIcon} {errorCount} error{errorCount > 1 ? 's' : ''}
+          </Text>
+          <Text color={theme.text.secondary}> (ctrl+o for details)</Text>
+        </Box>
       )}
     </Box>
   );

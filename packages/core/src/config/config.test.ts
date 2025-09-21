@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { Mock } from 'vitest';
+import type { Mock, Mocked } from 'vitest';
 import type { ConfigParameters, SandboxConfig } from './config.js';
 import { Config, ApprovalMode } from './config.js';
 import * as path from 'node:path';
@@ -14,12 +14,12 @@ import {
   DEFAULT_TELEMETRY_TARGET,
   DEFAULT_OTLP_ENDPOINT,
 } from '../telemetry/index.js';
-import type { ContentGeneratorConfig } from '../core/contentGenerator.js';
-import {
-  AuthType,
-  createContentGeneratorConfig,
+import type {
+  ContentGenerator,
+  ContentGeneratorConfig,
 } from '../core/contentGenerator.js';
-import { GeminiClient } from '../core/client.js';
+import { AuthType } from '../core/contentGenerator.js';
+import type { GeminiClient } from '../core/client.js';
 import { GitService } from '../services/gitService.js';
 import { ClearcutLogger } from '../telemetry/clearcut-logger/clearcut-logger.js';
 
@@ -80,13 +80,67 @@ vi.mock('../tools/memoryTool', () => ({
   GEMINI_CONFIG_DIR: '.gemini',
 }));
 
-vi.mock('../core/contentGenerator.js');
+const mockContentGeneratorFns = {
+  generateContent: vi.fn<
+    Parameters<ContentGenerator['generateContent']>,
+    ReturnType<ContentGenerator['generateContent']>
+  >(),
+  generateContentStream: vi.fn<
+    Parameters<ContentGenerator['generateContentStream']>,
+    ReturnType<ContentGenerator['generateContentStream']>
+  >(),
+  countTokens: vi.fn<
+    Parameters<ContentGenerator['countTokens']>,
+    ReturnType<ContentGenerator['countTokens']>
+  >(),
+  embedContent: vi.fn<
+    Parameters<ContentGenerator['embedContent']>,
+    ReturnType<ContentGenerator['embedContent']>
+  >(),
+  submitToolResult: vi.fn<
+    Parameters<NonNullable<ContentGenerator['submitToolResult']>>,
+    ReturnType<NonNullable<ContentGenerator['submitToolResult']>>
+  >(),
+};
+
+const mockContentGenerator =
+  mockContentGeneratorFns as unknown as Mocked<ContentGenerator>;
+
+const rawConversationClient = {
+  initialize: vi.fn().mockResolvedValue(undefined),
+  stripThoughtsFromHistory: vi.fn(),
+};
+
+const mockConversationClient = rawConversationClient as unknown as GeminiClient;
+
+const mockProvider = {
+  id: 'mock-provider',
+  getDefaultModelId: vi.fn(() => 'mock-model'),
+  isModelSupported: vi.fn<(model: string) => boolean>(() => true),
+  createContentGeneratorConfig: vi.fn(),
+  createContentGenerator: vi.fn(),
+  createConversationClient: vi.fn(() => mockConversationClient),
+};
+
+vi.mock('../providers/modelProviderRegistry.js', () => ({
+  ModelProviderRegistryImpl: vi.fn().mockImplementation(() => ({
+    getDefaultProvider: () => mockProvider,
+    getProvider: (providerId: string) =>
+      providerId === mockProvider.id ? mockProvider : undefined,
+    listProviders: () => [mockProvider],
+  })),
+}));
+
+vi.mock('../core/contentGenerator.js', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../core/contentGenerator.js')>();
+  return {
+    ...actual,
+  };
+});
 
 vi.mock('../core/client.js', () => ({
-  GeminiClient: vi.fn().mockImplementation(() => ({
-    initialize: vi.fn().mockResolvedValue(undefined),
-    stripThoughtsFromHistory: vi.fn(),
-  })),
+  GeminiClient: vi.fn().mockImplementation(() => mockConversationClient),
 }));
 
 vi.mock('../telemetry/index.js', async (importOriginal) => {
@@ -170,6 +224,29 @@ describe('Server Config (config.ts)', () => {
       ClearcutLogger.prototype,
       'logStartSessionEvent',
     ).mockImplementation(() => undefined);
+
+    mockProvider.createContentGeneratorConfig.mockReset();
+    mockProvider.createContentGenerator.mockReset();
+    mockProvider.createConversationClient.mockReset();
+
+    mockProvider.createContentGeneratorConfig.mockImplementation(
+      (_: Config, authType: AuthType | undefined) =>
+        ({ authType }) as unknown as ContentGeneratorConfig,
+    );
+    mockProvider.createContentGenerator.mockImplementation(
+      async () => mockContentGenerator,
+    );
+    mockProvider.createConversationClient.mockReturnValue(
+      mockConversationClient,
+    );
+
+    rawConversationClient.initialize.mockResolvedValue(undefined);
+    rawConversationClient.stripThoughtsFromHistory.mockReset();
+
+    mockContentGenerator.generateContent.mockReset();
+    mockContentGenerator.generateContentStream.mockReset();
+    mockContentGenerator.countTokens.mockReset();
+    mockContentGenerator.embedContent.mockReset();
   });
 
   describe('initialize', () => {
@@ -218,8 +295,8 @@ describe('Server Config (config.ts)', () => {
         apiKey: 'test-key',
       };
 
-      vi.mocked(createContentGeneratorConfig).mockReturnValue(
-        mockContentConfig,
+      mockProvider.createContentGeneratorConfig.mockReturnValue(
+        mockContentConfig as unknown as ContentGeneratorConfig,
       );
 
       // Set fallback mode to true to ensure it gets reset
@@ -228,24 +305,21 @@ describe('Server Config (config.ts)', () => {
 
       await config.refreshAuth(authType);
 
-      expect(createContentGeneratorConfig).toHaveBeenCalledWith(
+      expect(mockProvider.createContentGeneratorConfig).toHaveBeenCalledWith(
         config,
         authType,
       );
       // Verify that contentGeneratorConfig is updated
       expect(config.getContentGeneratorConfig()).toEqual(mockContentConfig);
-      expect(GeminiClient).toHaveBeenCalledWith(config);
+      expect(mockProvider.createConversationClient).toHaveBeenCalledWith(
+        config,
+      );
       // Verify that fallback mode is reset
       expect(config.isInFallbackMode()).toBe(false);
     });
 
     it('should strip thoughts when switching from GenAI to Vertex', async () => {
       const config = new Config(baseParams);
-
-      vi.mocked(createContentGeneratorConfig).mockImplementation(
-        (_: Config, authType: AuthType | undefined) =>
-          ({ authType }) as unknown as ContentGeneratorConfig,
-      );
 
       await config.refreshAuth(AuthType.USE_GEMINI);
 
@@ -259,11 +333,6 @@ describe('Server Config (config.ts)', () => {
     it('should not strip thoughts when switching from Vertex to GenAI', async () => {
       const config = new Config(baseParams);
 
-      vi.mocked(createContentGeneratorConfig).mockImplementation(
-        (_: Config, authType: AuthType | undefined) =>
-          ({ authType }) as unknown as ContentGeneratorConfig,
-      );
-
       await config.refreshAuth(AuthType.USE_VERTEX_AI);
 
       await config.refreshAuth(AuthType.USE_GEMINI);
@@ -271,6 +340,67 @@ describe('Server Config (config.ts)', () => {
       expect(
         config.getGeminiClient().stripThoughtsFromHistory,
       ).not.toHaveBeenCalledWith();
+    });
+  });
+
+  describe('model provider management', () => {
+    it('should expose the active model provider', () => {
+      const config = new Config(baseParams);
+      expect(config.getModelProvider()).toBe(mockProvider);
+      expect(config.getModelProviderId()).toBe(mockProvider.id);
+    });
+
+    it('should list all available model providers', () => {
+      const config = new Config(baseParams);
+      expect(
+        config.listModelProviders().map((provider) => provider.id),
+      ).toEqual([mockProvider.id]);
+    });
+
+    it('aligns the initial model with the provider default when incompatible', () => {
+      mockProvider.isModelSupported.mockImplementation(
+        (model: string) => model === mockProvider.getDefaultModelId(),
+      );
+
+      const config = new Config({
+        ...baseParams,
+        model: 'unsupported-model',
+      });
+
+      expect(config.getModel()).toBe(mockProvider.getDefaultModelId());
+
+      mockProvider.isModelSupported.mockImplementation(
+        (_model: string) => true,
+      );
+    });
+
+    it('should throw when attempting to set an unknown provider', async () => {
+      const config = new Config(baseParams);
+      await expect(config.setModelProvider('unknown-provider')).rejects.toThrow(
+        'Unknown model provider: unknown-provider',
+      );
+    });
+
+    it('should throw when constructed with an unknown provider identifier', () => {
+      expect(
+        () =>
+          new Config({
+            ...baseParams,
+            modelProviderId: 'unknown-provider',
+          }),
+      ).toThrow('Unknown model provider requested: unknown-provider');
+    });
+
+    it('should not recreate the conversation client when the provider is unchanged', async () => {
+      const config = new Config(baseParams);
+      mockProvider.createConversationClient.mockClear();
+      mockProvider.createConversationClient.mockReturnValue(
+        mockConversationClient,
+      );
+
+      await config.setModelProvider(mockProvider.id);
+
+      expect(mockProvider.createConversationClient).not.toHaveBeenCalled();
     });
   });
 
@@ -927,7 +1057,9 @@ describe('BaseLlmClient Lifecycle', () => {
     const authType = AuthType.USE_GEMINI;
     const mockContentConfig = { model: 'gemini-flash', apiKey: 'test-key' };
 
-    vi.mocked(createContentGeneratorConfig).mockReturnValue(mockContentConfig);
+    mockProvider.createContentGeneratorConfig.mockReturnValue(
+      mockContentConfig as unknown as ContentGeneratorConfig,
+    );
 
     await config.refreshAuth(authType);
 

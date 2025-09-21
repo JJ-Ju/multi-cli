@@ -203,6 +203,7 @@ describe('useGeminiStream', () => {
       getSessionId() {
         return 'test-session-id';
       },
+      getModelProviderId: vi.fn(() => 'google-genai'),
       setQuotaErrorOccurred: vi.fn(),
       getQuotaErrorOccurred: vi.fn(() => false),
       getModel: vi.fn(() => 'gemini-2.5-pro'),

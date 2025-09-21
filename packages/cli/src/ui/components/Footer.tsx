@@ -7,7 +7,7 @@
 import type React from 'react';
 import { Box, Text } from 'ink';
 import { theme } from '../semantic-colors.js';
-import { shortenPath, tildeifyPath } from '@google/gemini-cli-core';
+import { shortenPath, tildeifyPath } from '../../utils/corePaths.js';
 import { ConsoleSummaryDisplay } from './ConsoleSummaryDisplay.js';
 import process from 'node:process';
 import path from 'node:path';
@@ -18,9 +18,11 @@ import { DebugProfiler } from './DebugProfiler.js';
 
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
 import { isNarrowWidth } from '../utils/isNarrowWidth.js';
+import { getProviderDisplayName } from '../utils/providerDisplay.js';
 
 export interface FooterProps {
   model: string;
+  modelProviderId?: string;
   targetDir: string;
   branchName?: string;
   debugMode: boolean;
@@ -40,6 +42,7 @@ export interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({
   model,
+  modelProviderId,
   targetDir,
   branchName,
   debugMode,
@@ -59,6 +62,10 @@ export const Footer: React.FC<FooterProps> = ({
   const { columns: terminalWidth } = useTerminalSize();
 
   const isNarrow = isNarrowWidth(terminalWidth);
+  const providerLabel = modelProviderId
+    ? (getProviderDisplayName(modelProviderId) ?? modelProviderId)
+    : undefined;
+  const modelLabel = providerLabel ? `${providerLabel} · ${model}` : model;
 
   // Adjust path length based on terminal width
   const pathLength = Math.max(20, Math.floor(terminalWidth * 0.4));
@@ -135,17 +142,17 @@ export const Footer: React.FC<FooterProps> = ({
         </Box>
       )}
 
-      {/* Right Section: Gemini Label and Console Summary */}
+      {/* Right Section: Model Label and Console Summary */}
       {(!hideModelInfo ||
         showMemoryUsage ||
         corgiMode ||
-        (!showErrorDetails && errorCount > 0)) && (
+        !showErrorDetails) && (
         <Box alignItems="center" paddingTop={isNarrow ? 1 : 0}>
           {!hideModelInfo && (
             <Box alignItems="center">
               <Text color={theme.text.accent}>
                 {isNarrow ? '' : ' '}
-                {model}{' '}
+                {modelLabel}{' '}
                 <ContextUsageDisplay
                   promptTokenCount={promptTokenCount}
                   model={model}
@@ -165,10 +172,14 @@ export const Footer: React.FC<FooterProps> = ({
                 <Text color={theme.status.error}>▼ </Text>
               </Text>
             )}
-            {!showErrorDetails && errorCount > 0 && (
+            {!showErrorDetails && (
               <Box>
                 {!hideModelInfo && <Text color={theme.ui.comment}>| </Text>}
-                <ConsoleSummaryDisplay errorCount={errorCount} />
+                <ConsoleSummaryDisplay
+                  errorCount={errorCount}
+                  modelProviderId={modelProviderId}
+                  model={model}
+                />
               </Box>
             )}
           </Box>

@@ -79,6 +79,7 @@ export interface CompressionProps {
 
 export interface HistoryItemBase {
   text?: string; // Text content for user/gemini/info/error messages
+  modelProviderId?: string;
 }
 
 export type HistoryItemUser = HistoryItemBase & {
@@ -89,11 +90,13 @@ export type HistoryItemUser = HistoryItemBase & {
 export type HistoryItemGemini = HistoryItemBase & {
   type: 'gemini';
   text: string;
+  modelProviderId?: string;
 };
 
 export type HistoryItemGeminiContent = HistoryItemBase & {
   type: 'gemini_content';
   text: string;
+  modelProviderId?: string;
 };
 
 export type HistoryItemInfo = HistoryItemBase & {
@@ -117,6 +120,7 @@ export type HistoryItemAbout = HistoryItemBase & {
   osVersion: string;
   sandboxEnv: string;
   modelVersion: string;
+  modelProvider: string;
   selectedAuthType: string;
   gcpProject: string;
   ideClient: string;
@@ -219,6 +223,7 @@ export type Message =
       osVersion: string;
       sandboxEnv: string;
       modelVersion: string;
+      modelProvider: string;
       selectedAuthType: string;
       gcpProject: string;
       ideClient: string;

@@ -166,6 +166,12 @@ export const AppContainer = (props: AppContainerProps) => {
   }, [config]);
 
   const [currentModel, setCurrentModel] = useState(getEffectiveModel());
+  const getActiveProvider = useCallback(
+    () => config.getModelProviderId(),
+    [config],
+  );
+  const [currentModelProvider, setCurrentModelProvider] =
+    useState(getActiveProvider());
 
   const [userTier, setUserTier] = useState<UserTierId | undefined>(undefined);
 
@@ -212,13 +218,23 @@ export const AppContainer = (props: AppContainerProps) => {
       if (effectiveModel !== currentModel) {
         setCurrentModel(effectiveModel);
       }
+      const activeProvider = getActiveProvider();
+      if (activeProvider !== currentModelProvider) {
+        setCurrentModelProvider(activeProvider);
+      }
     };
 
     checkModelChange();
     const interval = setInterval(checkModelChange, 1000); // Check every second
 
     return () => clearInterval(interval);
-  }, [config, currentModel, getEffectiveModel]);
+  }, [
+    config,
+    currentModel,
+    currentModelProvider,
+    getActiveProvider,
+    getEffectiveModel,
+  ]);
 
   const {
     consoleMessages,
@@ -1047,6 +1063,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       showWorkspaceMigrationDialog,
       workspaceExtensions,
       currentModel,
+      currentModelProvider,
       userTier,
       proQuotaRequest,
       contextFileNames,
@@ -1142,6 +1159,7 @@ Logging in with Google... Please restart Gemini CLI to continue.
       updateInfo,
       showIdeRestartPrompt,
       isRestarting,
+      currentModelProvider,
       currentModel,
       extensionsUpdateState,
       activePtyId,

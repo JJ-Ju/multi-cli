@@ -124,6 +124,8 @@ const createMockUIState = (overrides: Partial<UIState> = {}): UIState =>
     errorCount: 0,
     nightly: false,
     isTrustedFolder: true,
+    currentModel: 'gemini-1.5-pro',
+    currentModelProvider: 'google-genai',
     ...overrides,
   }) as UIState;
 
@@ -139,6 +141,8 @@ const createMockUIActions = (): UIActions =>
 
 const createMockConfig = (overrides = {}) => ({
   getModel: vi.fn(() => 'gemini-1.5-pro'),
+  getModelProvider: vi.fn(() => ({ id: 'google-genai' })),
+  getModelProviderId: vi.fn(() => 'google-genai'),
   getTargetDir: vi.fn(() => '/test/dir'),
   getDebugMode: vi.fn(() => false),
   getAccessibility: vi.fn(() => ({})),

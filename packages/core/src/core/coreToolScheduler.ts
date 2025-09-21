@@ -42,6 +42,7 @@ import * as path from 'node:path';
 import { doesToolInvocationMatch } from '../utils/tool-utils.js';
 import levenshtein from 'fast-levenshtein';
 import { ShellToolInvocation } from '../tools/shell.js';
+import { logGrokDebug } from '../providers/grokDebugLogger.js';
 
 export type ValidatingToolCall = {
   status: 'validating';
@@ -619,6 +620,13 @@ export class CoreToolScheduler {
     request: ToolCallRequestInfo | ToolCallRequestInfo[],
     signal: AbortSignal,
   ): Promise<void> {
+    logGrokDebug('scheduler.schedule', {
+      requests: Array.isArray(request)
+        ? request.map((req) => ({ callId: req.callId, name: req.name }))
+        : [{ callId: request.callId, name: request.name }],
+      isRunning: this.isRunning(),
+      isScheduling: this.isScheduling,
+    });
     if (this.isRunning() || this.isScheduling) {
       return new Promise((resolve, reject) => {
         const abortHandler = () => {
@@ -657,6 +665,16 @@ export class CoreToolScheduler {
   ): Promise<void> {
     this.isScheduling = true;
     try {
+      logGrokDebug('scheduler._schedule.start', {
+        requests: Array.isArray(request)
+          ? request.map((req) => ({ callId: req.callId, name: req.name }))
+          : [
+              {
+                callId: (request as ToolCallRequestInfo).callId,
+                name: (request as ToolCallRequestInfo).name,
+              },
+            ],
+      });
       if (this.isRunning()) {
         throw new Error(
           'Cannot schedule new tool calls while other tool calls are actively running (executing or awaiting approval).',
@@ -739,6 +757,10 @@ export class CoreToolScheduler {
               ToolConfirmationOutcome.ProceedAlways,
             );
             this.setStatusInternal(reqInfo.callId, 'scheduled');
+            logGrokDebug('scheduler.autoApprovedToolCall', {
+              callId: reqInfo.callId,
+              name: reqInfo.name,
+            });
             continue;
           }
 
@@ -812,6 +834,7 @@ export class CoreToolScheduler {
       }
       this.attemptExecutionOfScheduledCalls(signal);
       void this.checkAndNotifyCompletion();
+      logGrokDebug('scheduler._schedule.end');
     } finally {
       this.isScheduling = false;
     }
