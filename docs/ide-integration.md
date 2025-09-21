@@ -1,6 +1,8 @@
 # IDE Integration
 
-Gemini CLI can integrate with your IDE to provide a more seamless and context-aware experience. This integration allows the CLI to understand your workspace better and enables powerful features like native in-editor diffing.
+Ionesco CLI can integrate with your IDE to provide a more seamless and context-aware experience. This integration allows the CLI to understand your workspace better and enables powerful features like native in-editor diffing.
+
+> **Note:** The VS Code companion extension still surfaces commands under the original "Gemini CLI" name. The functionality is unchanged.
 
 Currently, the only supported IDE is [Visual Studio Code](https://code.visualstudio.com/) and other editors that support VS Code extensions. To build support for other editors, see the [IDE Companion Extension Spec](./ide-companion-spec.md).
 
@@ -13,8 +15,8 @@ Currently, the only supported IDE is [Visual Studio Code](https://code.visualstu
 
 - **Native Diffing:** When Gemini suggests code modifications, you can view the changes directly within your IDE's native diff viewer. This allows you to review, edit, and accept or reject the suggested changes seamlessly.
 
-- **VS Code Commands:** You can access Gemini CLI features directly from the VS Code Command Palette (`Cmd+Shift+P` or `Ctrl+Shift+P`):
-  - `Gemini CLI: Run`: Starts a new Gemini CLI session in the integrated terminal.
+- **VS Code Commands:** You can access Ionesco CLI features directly from the VS Code Command Palette (`Cmd+Shift+P` or `Ctrl+Shift+P`):
+  - `Gemini CLI: Run`: Starts a new Ionesco CLI session in the integrated terminal.
   - `Gemini CLI: Accept Diff`: Accepts the changes in the active diff editor.
   - `Gemini CLI: Close Diff Editor`: Rejects the changes and closes the active diff editor.
   - `Gemini CLI: View Third-Party Notices`: Displays the third-party notices for the extension.
@@ -25,11 +27,11 @@ There are three ways to set up the IDE integration:
 
 ### 1. Automatic Nudge (Recommended)
 
-When you run Gemini CLI inside a supported editor, it will automatically detect your environment and prompt you to connect. Answering "Yes" will automatically run the necessary setup, which includes installing the companion extension and enabling the connection.
+When you run Ionesco CLI inside a supported editor, it will automatically detect your environment and prompt you to connect. Answering "Yes" will automatically run the necessary setup, which includes installing the companion extension and enabling the connection.
 
 ### 2. Manual Installation from CLI
 
-If you previously dismissed the prompt or want to install the extension manually, you can run the following command inside Gemini CLI:
+If you previously dismissed the prompt or want to install the extension manually, you can run the following command inside Ionesco CLI:
 
 ```
 /ide install
@@ -45,7 +47,7 @@ You can also install the extension directly from a marketplace.
 - **For VS Code Forks:** To support forks of VS Code, the extension is also published on the [Open VSX Registry](https://open-vsx.org/extension/google/gemini-cli-vscode-ide-companion). Follow your editor's instructions for installing extensions from this registry.
 
 > NOTE:
-> The "Gemini CLI Companion" extension may appear towards the bottom of search results. If you don't see it immediately, try scrolling down or sorting by "Newly Published".
+> The "Ionesco CLI Companion" extension may appear towards the bottom of search results. If you don't see it immediately, try scrolling down or sorting by "Newly Published".
 >
 > After manually installing the extension, you must run `/ide enable` in the CLI to activate the integration.
 
@@ -64,7 +66,7 @@ You can control the IDE integration from within the CLI:
   /ide disable
   ```
 
-When enabled, Gemini CLI will automatically attempt to connect to the IDE companion extension.
+When enabled, Ionesco CLI will automatically attempt to connect to the IDE companion extension.
 
 ### Checking the Status
 
@@ -102,10 +104,10 @@ If you select ‘Yes, allow always’ in the CLI, changes will no longer show up
 
 ## Using with Sandboxing
 
-If you are using Gemini CLI within a sandbox, please be aware of the following:
+If you are using Ionesco CLI within a sandbox, please be aware of the following:
 
 - **On macOS:** The IDE integration requires network access to communicate with the IDE companion extension. You must use a Seatbelt profile that allows network access.
-- **In a Docker Container:** If you run Gemini CLI inside a Docker (or Podman) container, the IDE integration can still connect to the VS Code extension running on your host machine. The CLI is configured to automatically find the IDE server on `host.docker.internal`. No special configuration is usually required, but you may need to ensure your Docker networking setup allows connections from the container to the host.
+- **In a Docker Container:** If you run Ionesco CLI inside a Docker (or Podman) container, the IDE integration can still connect to the VS Code extension running on your host machine. The CLI is configured to automatically find the IDE server on `host.docker.internal`. No special configuration is usually required, but you may need to ensure your Docker networking setup allows connections from the container to the host.
 
 ## Troubleshooting
 
@@ -114,9 +116,9 @@ If you encounter issues with IDE integration, here are some common error message
 ### Connection Errors
 
 - **Message:** `🔴 Disconnected: Failed to connect to IDE companion extension in [IDE Name]. Please ensure the extension is running. To install the extension, run /ide install.`
-  - **Cause:** Gemini CLI could not find the necessary environment variables (`GEMINI_CLI_IDE_WORKSPACE_PATH` or `GEMINI_CLI_IDE_SERVER_PORT`) to connect to the IDE. This usually means the IDE companion extension is not running or did not initialize correctly.
+  - **Cause:** Ionesco CLI could not find the necessary environment variables (`GEMINI_CLI_IDE_WORKSPACE_PATH` or `GEMINI_CLI_IDE_SERVER_PORT`) to connect to the IDE. This usually means the IDE companion extension is not running or did not initialize correctly.
   - **Solution:**
-    1.  Make sure you have installed the **Gemini CLI Companion** extension in your IDE and that it is enabled.
+    1.  Make sure you have installed the **Ionesco CLI Companion** extension in your IDE and that it is enabled.
     2.  Open a new terminal window in your IDE to ensure it picks up the correct environment.
 
 - **Message:** `🔴 Disconnected: IDE connection error. The connection was lost unexpectedly. Please try reconnecting by running /ide enable`
@@ -125,7 +127,7 @@ If you encounter issues with IDE integration, here are some common error message
 
 ### Configuration Errors
 
-- **Message:** `🔴 Disconnected: Directory mismatch. Gemini CLI is running in a different location than the open workspace in [IDE Name]. Please run the CLI from one of the following directories: [List of directories]`
+- **Message:** `🔴 Disconnected: Directory mismatch. Ionesco CLI is running in a different location than the open workspace in [IDE Name]. Please run the CLI from one of the following directories: [List of directories]`
   - **Cause:** The CLI's current working directory is outside the workspace you have open in your IDE.
   - **Solution:** `cd` into the same directory that is open in your IDE and restart the CLI.
 
@@ -135,10 +137,10 @@ If you encounter issues with IDE integration, here are some common error message
 
 ### General Errors
 
-- **Message:** `IDE integration is not supported in your current environment. To use this feature, run Gemini CLI in one of these supported IDEs: [List of IDEs]`
-  - **Cause:** You are running Gemini CLI in a terminal or environment that is not a supported IDE.
-  - **Solution:** Run Gemini CLI from the integrated terminal of a supported IDE, like VS Code.
+- **Message:** `IDE integration is not supported in your current environment. To use this feature, run Ionesco CLI in one of these supported IDEs: [List of IDEs]`
+  - **Cause:** You are running Ionesco CLI in a terminal or environment that is not a supported IDE.
+  - **Solution:** Run Ionesco CLI from the integrated terminal of a supported IDE, like VS Code.
 
-- **Message:** `No installer is available for IDE. Please install the Gemini CLI Companion extension manually from the marketplace.`
+- **Message:** `No installer is available for IDE. Please install the Ionesco CLI Companion extension manually from the marketplace.`
   - **Cause:** You ran `/ide install`, but the CLI does not have an automated installer for your specific IDE.
-  - **Solution:** Open your IDE's extension marketplace, search for "Gemini CLI Companion", and [install it manually](#3-manual-installation-from-a-marketplace).
+  - **Solution:** Open your IDE's extension marketplace, search for "Ionesco CLI Companion", and [install it manually](#3-manual-installation-from-a-marketplace).

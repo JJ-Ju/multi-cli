@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM Launch the multi-provider Gemini CLI with the correct environment.
+REM Launch the multi-provider Ionesco CLI with the correct environment.
 
 set "SCRIPT_DIR=%~dp0"
 set "REPO_ROOT=%SCRIPT_DIR%.."

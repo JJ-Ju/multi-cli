@@ -1,6 +1,6 @@
 # CLI Commands
 
-Gemini CLI supports several built-in commands to help you manage your session, customize the interface, and control its behavior. These commands are prefixed with a forward slash (`/`), an at symbol (`@`), or an exclamation mark (`!`).
+Ionesco CLI supports several built-in commands to help you manage your session, customize the interface, and control its behavior. These commands are prefixed with a forward slash (`/`), an at symbol (`@`), or an exclamation mark (`!`).
 
 ## Slash commands (`/`)
 
@@ -9,7 +9,7 @@ Slash commands provide meta-level control over the CLI itself.
 ### Built-in Commands
 
 - **`/bug`**
-  - **Description:** File an issue about Gemini CLI. By default, the issue is filed within the GitHub repository for Gemini CLI. The string you enter after `/bug` will become the headline for the bug being filed. The default `/bug` behavior can be modified using the `advanced.bugCommand` setting in your `.gemini/settings.json` files.
+  - **Description:** File an issue about Ionesco CLI. By default, the issue is filed within the GitHub repository for Ionesco CLI. The string you enter after `/bug` will become the headline for the bug being filed. The default `/bug` behavior can be modified using the `advanced.bugCommand` setting in your `.gemini/settings.json` files.
 
 - **`/chat`**
   - **Description:** Save and resume conversation history for branching conversation state interactively, or resuming a previous state from a later session.
@@ -42,7 +42,7 @@ Slash commands provide meta-level control over the CLI itself.
   - **Description:** Replace the entire chat context with a summary. This saves on tokens used for future tasks while retaining a high level summary of what has happened.
 
 - **`/copy`**
-  - **Description:** Copies the last output produced by Gemini CLI to your clipboard, for easy sharing or reuse.
+  - **Description:** Copies the last output produced by Ionesco CLI to your clipboard, for easy sharing or reuse.
   - **Note:** This command requires platform-specific clipboard tools to be installed.
     - On Linux, it requires `xclip` or `xsel`. You can typically install them using your system's package manager.
     - On macOS, it requires `pbcopy`, and on Windows, it requires `clip`. These tools are typically pre-installed on their respective systems.
@@ -62,10 +62,10 @@ Slash commands provide meta-level control over the CLI itself.
   - **Description:** Open a dialog for selecting supported editors.
 
 - **`/extensions`**
-  - **Description:** Lists all active extensions in the current Gemini CLI session. See [Gemini CLI Extensions](../extension.md).
+  - **Description:** Lists all active extensions in the current Ionesco CLI session. See [Ionesco CLI Extensions](../extension.md).
 
 - **`/help`** (or **`/?`**)
-  - **Description:** Display help information about Gemini CLI, including available commands and their usage.
+  - **Description:** Display help information about Ionesco CLI, including available commands and their usage.
 
 - **`/mcp`**
   - **Description:** List configured Model Context Protocol (MCP) servers, their connection status, server details, and available tools.
@@ -95,15 +95,15 @@ Slash commands provide meta-level control over the CLI itself.
   - **Note:** Only available if the CLI is invoked with the `--checkpointing` option or configured via [settings](./configuration.md). See [Checkpointing documentation](../checkpointing.md) for more details.
 
 - **`/settings`**
-  - **Description:** Open the settings editor to view and modify Gemini CLI settings.
-  - **Details:** This command provides a user-friendly interface for changing settings that control the behavior and appearance of Gemini CLI. It is equivalent to manually editing the `.gemini/settings.json` file, but with validation and guidance to prevent errors.
+  - **Description:** Open the settings editor to view and modify Ionesco CLI settings.
+  - **Details:** This command provides a user-friendly interface for changing settings that control the behavior and appearance of Ionesco CLI. It is equivalent to manually editing the `.gemini/settings.json` file, but with validation and guidance to prevent errors.
   - **Usage:** Simply run `/settings` and the editor will open. You can then browse or search for specific settings, view their current values, and modify them as desired. Changes to some settings are applied immediately, while others require a restart.
 
 - **`/stats`**
-  - **Description:** Display detailed statistics for the current Gemini CLI session, including token usage, cached token savings (when available), and session duration. Note: Cached token information is only displayed when cached tokens are being used, which occurs with API key authentication but not with OAuth authentication at this time.
+  - **Description:** Display detailed statistics for the current Ionesco CLI session, including token usage, cached token savings (when available), and session duration. Note: Cached token information is only displayed when cached tokens are being used, which occurs with API key authentication but not with OAuth authentication at this time.
 
 - [**`/theme`**](./themes.md)
-  - **Description:** Open a dialog that lets you change the visual theme of Gemini CLI.
+  - **Description:** Open a dialog that lets you change the visual theme of Ionesco CLI.
 
 - **`/auth`**
   - **Description:** Open a dialog that lets you change the authentication method.
@@ -112,7 +112,7 @@ Slash commands provide meta-level control over the CLI itself.
   - **Description:** Show version info. Please share this information when filing issues.
 
 - [**`/tools`**](../tools/index.md)
-  - **Description:** Display a list of tools that are currently available within Gemini CLI.
+  - **Description:** Display a list of tools that are currently available within Ionesco CLI.
   - **Usage:** `/tools [desc]`
   - **Sub-commands:**
     - **`desc`** or **`descriptions`**:
@@ -124,7 +124,7 @@ Slash commands provide meta-level control over the CLI itself.
   - **Description:** Display the Privacy Notice and allow users to select whether they consent to the collection of their data for service improvement purposes.
 
 - **`/quit`** (or **`/exit`**)
-  - **Description:** Exit Gemini CLI.
+  - **Description:** Exit Ionesco CLI.
 
 - **`/vim`**
   - **Description:** Toggle vim mode on or off. When vim mode is enabled, the input area supports vim-style navigation and editing commands in both NORMAL and INSERT modes.
@@ -144,11 +144,11 @@ Slash commands provide meta-level control over the CLI itself.
 
 For a quick start, see the [example](#example-a-pure-function-refactoring-command) below.
 
-Custom commands allow you to save and reuse your favorite or most frequently used prompts as personal shortcuts within Gemini CLI. You can create commands that are specific to a single project or commands that are available globally across all your projects, streamlining your workflow and ensuring consistency.
+Custom commands allow you to save and reuse your favorite or most frequently used prompts as personal shortcuts within Ionesco CLI. You can create commands that are specific to a single project or commands that are available globally across all your projects, streamlining your workflow and ensuring consistency.
 
 #### File Locations & Precedence
 
-Gemini CLI discovers commands from two locations, loaded in a specific order:
+Ionesco CLI discovers commands from two locations, loaded in a specific order:
 
 1.  **User Commands (Global):** Located in `~/.gemini/commands/`. These commands are available in any project you are working on.
 2.  **Project Commands (Local):** Located in `<your-project-root>/.gemini/commands/`. These commands are specific to the current project and can be checked into version control to be shared with your team.
@@ -268,7 +268,7 @@ When you run `/changelog 1.2.0 added "New feature"`, the final text sent to the 
 
 You can make your commands dynamic by executing shell commands directly within your `prompt` and injecting their output. This is ideal for gathering context from your local environment, like reading file content or checking the status of Git.
 
-When a custom command attempts to execute a shell command, Gemini CLI will now prompt you for confirmation before proceeding. This is a security measure to ensure that only intended commands can be run.
+When a custom command attempts to execute a shell command, Ionesco CLI will now prompt you for confirmation before proceeding. This is a security measure to ensure that only intended commands can be run.
 
 **How It Works:**
 
@@ -381,7 +381,7 @@ That's it! You can now run your command in the CLI. First, you might add a file 
 > /refactor:pure
 ```
 
-Gemini CLI will then execute the multi-line prompt defined in your TOML file.
+Ionesco CLI will then execute the multi-line prompt defined in your TOML file.
 
 ## Input Prompt Shortcuts
 
@@ -422,13 +422,13 @@ At commands are used to include the content of files or directories as part of y
 
 ## Shell mode & passthrough commands (`!`)
 
-The `!` prefix lets you interact with your system's shell directly from within Gemini CLI.
+The `!` prefix lets you interact with your system's shell directly from within Ionesco CLI.
 
 - **`!<shell_command>`**
   - **Description:** Execute the given `<shell_command>` using `bash` on Linux/macOS or `cmd.exe` on Windows. Any output or errors from the command are displayed in the terminal.
   - **Examples:**
-    - `!ls -la` (executes `ls -la` and returns to Gemini CLI)
-    - `!git status` (executes `git status` and returns to Gemini CLI)
+    - `!ls -la` (executes `ls -la` and returns to Ionesco CLI)
+    - `!git status` (executes `git status` and returns to Ionesco CLI)
 
 - **`!` (Toggle shell mode)**
   - **Description:** Typing `!` on its own toggles shell mode.
@@ -436,8 +436,8 @@ The `!` prefix lets you interact with your system's shell directly from within G
       - When active, shell mode uses a different coloring and a "Shell Mode Indicator".
       - While in shell mode, text you type is interpreted directly as a shell command.
     - **Exiting shell mode:**
-      - When exited, the UI reverts to its standard appearance and normal Gemini CLI behavior resumes.
+      - When exited, the UI reverts to its standard appearance and normal Ionesco CLI behavior resumes.
 
 - **Caution for all `!` usage:** Commands you execute in shell mode have the same permissions and impact as if you ran them directly in your terminal.
 
-- **Environment Variable:** When a command is executed via `!` or in shell mode, the `GEMINI_CLI=1` environment variable is set in the subprocess's environment. This allows scripts or tools to detect if they are being run from within the Gemini CLI.
+- **Environment Variable:** When a command is executed via `!` or in shell mode, the `GEMINI_CLI=1` environment variable is set in the subprocess's environment. This allows scripts or tools to detect if they are being run from within the Ionesco CLI.

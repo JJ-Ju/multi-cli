@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Launch the multi-provider Gemini CLI with the correct environment in place.
+# Launch the multi-provider Ionesco CLI with the correct environment in place.
 
 SCRIPT_SOURCE="${BASH_SOURCE[0]}"
 SCRIPT_DIR="$(cd -- "$(dirname "$SCRIPT_SOURCE")" && pwd)"

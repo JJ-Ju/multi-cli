@@ -365,7 +365,7 @@ export const AppContainer = (props: AppContainerProps) => {
           await runExitCleanup();
           console.log(`
 ----------------------------------------------------------------
-Logging in with Google... Please restart Gemini CLI to continue.
+Logging in with Google... Please restart Ionesco CLI to continue.
 ----------------------------------------------------------------
           `);
           process.exit(0);

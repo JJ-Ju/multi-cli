@@ -1,12 +1,12 @@
-# Gemini CLI Companion Extension: Interface Specification
+# Ionesco CLI Companion Extension: Interface Specification
 
 > Last Updated: September 15, 2025
 
-This document defines the contract for building a companion extension to enable Gemini CLI's IDE mode. For VS Code, these features (native diffing, context awareness) are provided by the official extension ([marketplace](https://marketplace.visualstudio.com/items?itemName=Google.gemini-cli-vscode-ide-companion)). This specification is for contributors who wish to bring similar functionality to other editors like JetBrains IDEs, Sublime Text, etc.
+This document defines the contract for building a companion extension to enable Ionesco CLI's IDE mode. For VS Code, these features (native diffing, context awareness) are provided by the official extension ([marketplace](https://marketplace.visualstudio.com/items?itemName=Google.gemini-cli-vscode-ide-companion)). This specification is for contributors who wish to bring similar functionality to other editors like JetBrains IDEs, Sublime Text, etc.
 
 ## I. The Communication Interface
 
-Gemini CLI and the IDE extension communicate through a local communication channel.
+Ionesco CLI and the IDE extension communicate through a local communication channel.
 
 ### 1. Transport Layer: MCP over HTTP
 
@@ -18,7 +18,7 @@ The extension **MUST** run a local HTTP server that implements the **Model Conte
 
 ### 2. Discovery Mechanism: The Port File
 
-For Gemini CLI to connect, it needs to discover which IDE instance it's running in and what port your server is using. The extension **MUST** facilitate this by creating a "discovery file."
+For Ionesco CLI to connect, it needs to discover which IDE instance it's running in and what port your server is using. The extension **MUST** facilitate this by creating a "discovery file."
 
 - **How the CLI Finds the File:** The CLI determines the Process ID (PID) of the IDE it's running in by traversing the process tree. It then looks for a discovery file that contains this PID in its name.
 - **File Location:** The file must be created in a specific directory: `os.tmpdir()/gemini/ide/`. Your extension must create this directory if it doesn't exist.
@@ -174,7 +174,7 @@ When the user rejects the changes (e.g., by closing the diff view without accept
 
 ## IV. Supporting Additional IDEs
 
-To add support for a new IDE, two main components in the Gemini CLI codebase need to be updated: the detection logic and the installer logic.
+To add support for a new IDE, two main components in the Ionesco CLI codebase need to be updated: the detection logic and the installer logic.
 
 ### 1. IDE Detection (`@packages/core/src/ide/detect-ide.ts`)
 

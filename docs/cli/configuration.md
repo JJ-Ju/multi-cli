@@ -1,4 +1,4 @@
-# Gemini CLI Configuration
+# Ionesco CLI Configuration
 
 **Note on New Configuration Format**
 
@@ -9,7 +9,7 @@ The format of the `settings.json` file has been updated to a new, more organized
 
 For details on the previous format, please see the [v1 Configuration documentation](./configuration-v1.md).
 
-Gemini CLI offers several ways to configure its behavior, including environment variables, command-line arguments, and settings files. This document outlines the different configuration methods and available settings.
+Ionesco CLI offers several ways to configure its behavior, including environment variables, command-line arguments, and settings files. This document outlines the different configuration methods and available settings.
 
 ## Configuration layers
 
@@ -25,28 +25,28 @@ Configuration is applied in the following order of precedence (lower numbers are
 
 ## Settings files
 
-Gemini CLI uses JSON settings files for persistent configuration. There are four locations for these files:
+Ionesco CLI uses JSON settings files for persistent configuration. There are four locations for these files:
 
 - **System defaults file:**
   - **Location:** `/etc/gemini-cli/system-defaults.json` (Linux), `C:\ProgramData\gemini-cli\system-defaults.json` (Windows) or `/Library/Application Support/GeminiCli/system-defaults.json` (macOS). The path can be overridden using the `GEMINI_CLI_SYSTEM_DEFAULTS_PATH` environment variable.
   - **Scope:** Provides a base layer of system-wide default settings. These settings have the lowest precedence and are intended to be overridden by user, project, or system override settings.
 - **User settings file:**
   - **Location:** `~/.gemini/settings.json` (where `~` is your home directory).
-  - **Scope:** Applies to all Gemini CLI sessions for the current user. User settings override system defaults.
+  - **Scope:** Applies to all Ionesco CLI sessions for the current user. User settings override system defaults.
 - **Project settings file:**
   - **Location:** `.gemini/settings.json` within your project's root directory.
-  - **Scope:** Applies only when running Gemini CLI from that specific project. Project settings override user settings and system defaults.
+  - **Scope:** Applies only when running Ionesco CLI from that specific project. Project settings override user settings and system defaults.
 - **System settings file:**
   - **Location:** `/etc/gemini-cli/settings.json` (Linux), `C:\ProgramData\gemini-cli\settings.json` (Windows) or `/Library/Application Support/GeminiCli/settings.json` (macOS). The path can be overridden using the `GEMINI_CLI_SYSTEM_SETTINGS_PATH` environment variable.
-  - **Scope:** Applies to all Gemini CLI sessions on the system, for all users. System settings act as overrides, taking precedence over all other settings files. May be useful for system administrators at enterprises to have controls over users' Gemini CLI setups.
+  - **Scope:** Applies to all Ionesco CLI sessions on the system, for all users. System settings act as overrides, taking precedence over all other settings files. May be useful for system administrators at enterprises to have controls over users' Ionesco CLI setups.
 
 **Note on environment variables in settings:** String values within your `settings.json` files can reference environment variables using either `$VAR_NAME` or `${VAR_NAME}` syntax. These variables will be automatically resolved when the settings are loaded. For example, if you have an environment variable `MY_API_TOKEN`, you could use it in `settings.json` like this: `"apiKey": "$MY_API_TOKEN"`.
 
-> **Note for Enterprise Users:** For guidance on deploying and managing Gemini CLI in a corporate environment, please see the [Enterprise Configuration](./enterprise.md) documentation.
+> **Note for Enterprise Users:** For guidance on deploying and managing Ionesco CLI in a corporate environment, please see the [Enterprise Configuration](./enterprise.md) documentation.
 
 ### The `.gemini` directory in your project
 
-In addition to a project settings file, a project's `.gemini` directory can contain other project-specific files related to Gemini CLI's operation, such as:
+In addition to a project settings file, a project's `.gemini` directory can contain other project-specific files related to Ionesco CLI's operation, such as:
 
 - [Custom sandbox profiles](#sandboxing) (e.g., `.gemini/sandbox-macos-custom.sb`, `.gemini/sandbox.Dockerfile`).
 
@@ -282,7 +282,7 @@ Settings are organized into categories. All settings should be placed within the
 
 #### `mcpServers`
 
-Configures connections to one or more Model-Context Protocol (MCP) servers for discovering and using custom tools. Gemini CLI attempts to connect to each configured MCP server to discover available tools. If multiple MCP servers expose a tool with the same name, the tool names will be prefixed with the server alias you defined in the configuration (e.g., `serverAlias__actualToolName`) to avoid conflicts. Note that the system might strip certain schema properties from MCP tool definitions for compatibility. At least one of `command`, `url`, or `httpUrl` must be provided. If multiple are specified, the order of precedence is `httpUrl`, then `url`, then `command`.
+Configures connections to one or more Model-Context Protocol (MCP) servers for discovering and using custom tools. Ionesco CLI attempts to connect to each configured MCP server to discover available tools. If multiple MCP servers expose a tool with the same name, the tool names will be prefixed with the server alias you defined in the configuration (e.g., `serverAlias__actualToolName`) to avoid conflicts. Note that the system might strip certain schema properties from MCP tool definitions for compatibility. At least one of `command`, `url`, or `httpUrl` must be provided. If multiple are specified, the order of precedence is `httpUrl`, then `url`, then `command`.
 
 - **`mcpServers.<SERVER_NAME>`** (object): The server parameters for the named server.
   - `command` (string, optional): The command to execute to start the MCP server via standard I/O.
@@ -300,7 +300,7 @@ Configures connections to one or more Model-Context Protocol (MCP) servers for d
 
 #### `telemetry`
 
-Configures logging and metrics collection for Gemini CLI. For more information, see [Telemetry](../telemetry.md).
+Configures logging and metrics collection for Ionesco CLI. For more information, see [Telemetry](../telemetry.md).
 
 - **Properties:**
   - **`enabled`** (boolean): Whether or not telemetry is enabled.
@@ -448,7 +448,7 @@ Arguments passed directly when running the CLI can override other configurations
   - Specifies the Gemini model to use for this session.
   - Example: `npm start -- --model gemini-1.5-pro-latest`
 - **`--prompt <your_prompt>`** (**`-p <your_prompt>`**):
-  - Used to pass a prompt directly to the command. This invokes Gemini CLI in a non-interactive mode.
+  - Used to pass a prompt directly to the command. This invokes Ionesco CLI in a non-interactive mode.
   - For scripting examples, use the `--output-format json` flag to get structured output.
 - **`--prompt-interactive <your_prompt>`** (**`-i <your_prompt>`**):
   - Starts an interactive session with the provided prompt as the initial input.
@@ -574,11 +574,11 @@ This example demonstrates how you can provide general project context, specific 
   - Use `/memory show` to display the combined instructional context currently loaded, allowing you to verify the hierarchy and content being used by the AI.
   - See the [Commands documentation](./commands.md#memory) for full details on the `/memory` command and its sub-commands (`show` and `refresh`).
 
-By understanding and utilizing these configuration layers and the hierarchical nature of context files, you can effectively manage the AI's memory and tailor the Gemini CLI's responses to your specific needs and projects.
+By understanding and utilizing these configuration layers and the hierarchical nature of context files, you can effectively manage the AI's memory and tailor the Ionesco CLI's responses to your specific needs and projects.
 
 ## Sandboxing
 
-The Gemini CLI can execute potentially unsafe operations (like shell commands and file modifications) within a sandboxed environment to protect your system.
+The Ionesco CLI can execute potentially unsafe operations (like shell commands and file modifications) within a sandboxed environment to protect your system.
 
 Sandboxing is disabled by default, but you can enable it in a few ways:
 
@@ -599,7 +599,7 @@ FROM gemini-cli-sandbox
 # COPY ./my-config /app/my-config
 ```
 
-When `.gemini/sandbox.Dockerfile` exists, you can use `BUILD_SANDBOX` environment variable when running Gemini CLI to automatically build the custom sandbox image:
+When `.gemini/sandbox.Dockerfile` exists, you can use `BUILD_SANDBOX` environment variable when running Ionesco CLI to automatically build the custom sandbox image:
 
 ```bash
 BUILD_SANDBOX=1 gemini -s
@@ -607,7 +607,7 @@ BUILD_SANDBOX=1 gemini -s
 
 ## Usage Statistics
 
-To help us improve the Gemini CLI, we collect anonymized usage statistics. This data helps us understand how the CLI is used, identify common issues, and prioritize new features.
+To help us improve the Ionesco CLI, we collect anonymized usage statistics. This data helps us understand how the CLI is used, identify common issues, and prioritize new features.
 
 **What we collect:**
 

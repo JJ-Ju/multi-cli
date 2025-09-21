@@ -26,18 +26,18 @@ This guide provides solutions to common issues and debugging tips, including top
 
 ## Frequently asked questions (FAQs)
 
-- **Q: How do I update Gemini CLI to the latest version?**
+- **Q: How do I update Ionesco CLI to the latest version?**
   - A: If you installed it globally via `npm`, update it using the command `npm install -g @google/gemini-cli@latest`. If you compiled it from source, pull the latest changes from the repository, and then rebuild using the command `npm run build`.
 
-- **Q: Where are the Gemini CLI configuration or settings files stored?**
-  - A: The Gemini CLI configuration is stored in two `settings.json` files:
+- **Q: Where are the Ionesco CLI configuration or settings files stored?**
+  - A: The Ionesco CLI configuration is stored in two `settings.json` files:
     1. In your home directory: `~/.gemini/settings.json`.
     2. In your project's root directory: `./.gemini/settings.json`.
 
-    Refer to [Gemini CLI Configuration](./cli/configuration.md) for more details.
+    Refer to [Ionesco CLI Configuration](./cli/configuration.md) for more details.
 
 - **Q: Why don't I see cached token counts in my stats output?**
-  - A: Cached token information is only displayed when cached tokens are being used. This feature is available for API key users (Gemini API key or Google Cloud Vertex AI) but not for OAuth users (such as Google Personal/Enterprise accounts like Google Gmail or Google Workspace, respectively). This is because the Gemini Code Assist API does not support cached content creation. You can still view your total token usage using the `/stats` command in Gemini CLI.
+  - A: Cached token information is only displayed when cached tokens are being used. This feature is available for API key users (Gemini API key or Google Cloud Vertex AI) but not for OAuth users (such as Google Personal/Enterprise accounts like Google Gmail or Google Workspace, respectively). This is because the Gemini Code Assist API does not support cached content creation. You can still view your total token usage using the `/stats` command in Ionesco CLI.
 
 ## Common error messages and solutions
 
@@ -46,12 +46,12 @@ This guide provides solutions to common issues and debugging tips, including top
   - **Solution:**
     Either stop the other process that is using the port or configure the MCP server to use a different port.
 
-- **Error: Command not found (when attempting to run Gemini CLI with `gemini`).**
-  - **Cause:** Gemini CLI is not correctly installed or it is not in your system's `PATH`.
+- **Error: Command not found (when attempting to run Ionesco CLI with `gemini`).**
+  - **Cause:** Ionesco CLI is not correctly installed or it is not in your system's `PATH`.
   - **Solution:**
-    The update depends on how you installed Gemini CLI:
-    - If you installed `gemini` globally, check that your `npm` global binary directory is in your `PATH`. You can update Gemini CLI using the command `npm install -g @google/gemini-cli@latest`.
-    - If you are running `gemini` from source, ensure you are using the correct command to invoke it (e.g., `node packages/cli/dist/index.js ...`). To update Gemini CLI, pull the latest changes from the repository, and then rebuild using the command `npm run build`.
+    The update depends on how you installed Ionesco CLI:
+    - If you installed `gemini` globally, check that your `npm` global binary directory is in your `PATH`. You can update Ionesco CLI using the command `npm install -g @google/gemini-cli@latest`.
+    - If you are running `gemini` from source, ensure you are using the correct command to invoke it (e.g., `node packages/cli/dist/index.js ...`). To update Ionesco CLI, pull the latest changes from the repository, and then rebuild using the command `npm run build`.
 
 - **Error: `MODULE_NOT_FOUND` or import errors.**
   - **Cause:** Dependencies are not installed correctly, or the project hasn't been built.
@@ -61,12 +61,12 @@ This guide provides solutions to common issues and debugging tips, including top
     3.  Verify that the build completed successfully with `npm run start`.
 
 - **Error: "Operation not permitted", "Permission denied", or similar.**
-  - **Cause:** When sandboxing is enabled, Gemini CLI may attempt operations that are restricted by your sandbox configuration, such as writing outside the project directory or system temp directory.
+  - **Cause:** When sandboxing is enabled, Ionesco CLI may attempt operations that are restricted by your sandbox configuration, such as writing outside the project directory or system temp directory.
   - **Solution:** Refer to the [Configuration: Sandboxing](./cli/configuration.md#sandboxing) documentation for more information, including how to customize your sandbox configuration.
 
-- **Gemini CLI is not running in interactive mode in "CI" environments**
-  - **Issue:** The Gemini CLI does not enter interactive mode (no prompt appears) if an environment variable starting with `CI_` (e.g., `CI_TOKEN`) is set. This is because the `is-in-ci` package, used by the underlying UI framework, detects these variables and assumes a non-interactive CI environment.
-  - **Cause:** The `is-in-ci` package checks for the presence of `CI`, `CONTINUOUS_INTEGRATION`, or any environment variable with a `CI_` prefix. When any of these are found, it signals that the environment is non-interactive, which prevents the Gemini CLI from starting in its interactive mode.
+- **Ionesco CLI is not running in interactive mode in "CI" environments**
+  - **Issue:** The Ionesco CLI does not enter interactive mode (no prompt appears) if an environment variable starting with `CI_` (e.g., `CI_TOKEN`) is set. This is because the `is-in-ci` package, used by the underlying UI framework, detects these variables and assumes a non-interactive CI environment.
+  - **Cause:** The `is-in-ci` package checks for the presence of `CI`, `CONTINUOUS_INTEGRATION`, or any environment variable with a `CI_` prefix. When any of these are found, it signals that the environment is non-interactive, which prevents the Ionesco CLI from starting in its interactive mode.
   - **Solution:** If the `CI_` prefixed variable is not needed for the CLI to function, you can temporarily unset it for the command. e.g., `env -u CI_TOKEN gemini`
 
 - **DEBUG mode not working from project .env file**
@@ -76,7 +76,7 @@ This guide provides solutions to common issues and debugging tips, including top
 
 ## Exit Codes
 
-The Gemini CLI uses specific exit codes to indicate the reason for termination. This is especially useful for scripting and automation.
+The Ionesco CLI uses specific exit codes to indicate the reason for termination. This is especially useful for scripting and automation.
 
 | Exit Code | Error Type                 | Description                                                                                         |
 | --------- | -------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -107,4 +107,4 @@ The Gemini CLI uses specific exit codes to indicate the reason for termination. 
 
 ## Existing GitHub Issues similar to yours or creating new Issues
 
-If you encounter an issue that was not covered here in this _Troubleshooting guide_, consider searching the Gemini CLI [Issue tracker on GitHub](https://github.com/google-gemini/gemini-cli/issues). If you can't find an issue similar to yours, consider creating a new GitHub Issue with a detailed description. Pull requests are also welcome!
+If you encounter an issue that was not covered here in this _Troubleshooting guide_, consider searching the Ionesco CLI [Issue tracker on GitHub](https://github.com/google-gemini/gemini-cli/issues). If you can't find an issue similar to yours, consider creating a new GitHub Issue with a detailed description. Pull requests are also welcome!

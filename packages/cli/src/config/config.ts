@@ -93,7 +93,7 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
     .locale('en')
     .scriptName('gemini')
     .usage(
-      'Usage: gemini [options] [command]\n\nGemini CLI - Launch an interactive CLI, use -p/--prompt for non-interactive mode',
+      'Usage: gemini [options] [command]\n\nIonesco CLI - Launch an interactive CLI, use -p/--prompt for non-interactive mode',
     )
     .option('telemetry', {
       type: 'boolean',
@@ -165,7 +165,7 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
       'proxy',
       'Use the "proxy" setting in settings.json instead. This flag will be removed in a future version.',
     )
-    .command('$0 [promptWords...]', 'Launch Gemini CLI', (yargsInstance) =>
+    .command('$0 [promptWords...]', 'Launch Ionesco CLI', (yargsInstance) =>
       yargsInstance
         .option('model', {
           alias: 'm',

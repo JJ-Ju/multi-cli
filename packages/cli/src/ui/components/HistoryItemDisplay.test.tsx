@@ -81,7 +81,7 @@ describe('<HistoryItemDisplay />', () => {
     const { lastFrame } = render(
       <HistoryItemDisplay {...baseItem} item={item} />,
     );
-    expect(lastFrame()).toContain('About Gemini CLI');
+    expect(lastFrame()).toContain('About Ionesco CLI');
   });
 
   it('renders ModelStatsDisplay for "model_stats" type', () => {

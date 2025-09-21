@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# bootstrap multi-provider Gemini CLI workspace (Node + Grok sidecar Python deps)
+# bootstrap multi-provider Ionesco CLI workspace (Node + Grok sidecar Python deps)
 
 SCRIPT_SOURCE="${BASH_SOURCE[0]}"
 SCRIPT_DIR="$(cd -- "$(dirname "$SCRIPT_SOURCE")" && pwd)"

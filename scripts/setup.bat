@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM Bootstrap multi-provider Gemini CLI workspace (Node + Grok sidecar Python deps)
+REM Bootstrap multi-provider Ionesco CLI workspace (Node + Grok sidecar Python deps)
 
 set "SCRIPT_DIR=%~dp0"
 set "REPO_ROOT=%SCRIPT_DIR%.."

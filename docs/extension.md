@@ -1,8 +1,8 @@
-# Gemini CLI Extensions
+# Ionesco CLI Extensions
 
 _This documentation is up-to-date with the v0.4.0 release._
 
-Gemini CLI extensions package prompts, MCP servers, and custom commands into a familiar and user-friendly format. With extensions, you can expand the capabilities of Gemini CLI and share those capabilities with others. They are designed to be easily installable and shareable.
+Ionesco CLI extensions package prompts, MCP servers, and custom commands into a familiar and user-friendly format. With extensions, you can expand the capabilities of Ionesco CLI and share those capabilities with others. They are designed to be easily installable and shareable.
 
 ## Extension management
 
@@ -22,7 +22,7 @@ Note that we create a copy of the installed extension, so you will need to run `
 gemini extensions install https://github.com/google-gemini/gemini-cli-security
 ```
 
-This will install the Gemini CLI Security extension, which offers support for a `/security:analyze` command.
+This will install the Ionesco CLI Security extension, which offers support for a `/security:analyze` command.
 
 ### Uninstalling an extension
 
@@ -80,7 +80,7 @@ gemini extensions link path/to/directory
 
 ## How it works
 
-On startup, Gemini CLI looks for extensions in `<home>/.gemini/extensions`
+On startup, Ionesco CLI looks for extensions in `<home>/.gemini/extensions`
 
 Extensions exist as a directory that contains a `gemini-extension.json` file. For example:
 
@@ -111,7 +111,7 @@ The `gemini-extension.json` file contains the configuration for the extension. T
 - `contextFileName`: The name of the file that contains the context for the extension. This will be used to load the context from the extension directory. If this property is not used but a `GEMINI.md` file is present in your extension directory, then that file will be loaded.
 - `excludeTools`: An array of tool names to exclude from the model. You can also specify command-specific restrictions for tools that support it, like the `run_shell_command` tool. For example, `"excludeTools": ["run_shell_command(rm -rf)"]` will block the `rm -rf` command. Note that this differs from the MCP server `excludeTools` functionality, which can be listed in the MCP server config.
 
-When Gemini CLI starts, it loads all the extensions and merges their configurations. If there are any conflicts, the workspace configuration takes precedence.
+When Ionesco CLI starts, it loads all the extensions and merges their configurations. If there are any conflicts, the workspace configuration takes precedence.
 
 ### Custom commands
 
@@ -149,7 +149,7 @@ For example, if both a user and the `gcp` extension define a `deploy` command:
 
 ## Variables
 
-Gemini CLI extensions allow variable substitution in `gemini-extension.json`. This can be useful if e.g., you need the current directory to run an MCP server using `"cwd": "${extensionPath}${/}run.ts"`.
+Ionesco CLI extensions allow variable substitution in `gemini-extension.json`. This can be useful if e.g., you need the current directory to run an MCP server using `"cwd": "${extensionPath}${/}run.ts"`.
 
 **Supported variables:**
 

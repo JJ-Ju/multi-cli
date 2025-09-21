@@ -1,6 +1,6 @@
 # Grok Provider Sidecar Contract
 
-This note defines the integration contract between the Gemini CLI (TypeScript) and
+This note defines the integration contract between the Ionesco CLI (TypeScript) and
 the Grok provider sidecar (Python). The goal is to allow the CLI to keep the
 existing tool/plugin infrastructure while delegating every Grok-specific operation
 to the official xAI Python SDK.
