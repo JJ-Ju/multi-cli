@@ -77,7 +77,7 @@ vi.mock('../tools/memoryTool', () => ({
   setGeminiMdFilename: vi.fn(),
   getCurrentGeminiMdFilename: vi.fn(() => 'GEMINI.md'), // Mock the original filename
   DEFAULT_CONTEXT_FILENAME: 'GEMINI.md',
-  GEMINI_CONFIG_DIR: '.gemini',
+  GEMINI_CONFIG_DIR: '.ionesco',
 }));
 
 const mockContentGeneratorFns = {
@@ -130,6 +130,9 @@ const mockProvider = {
   createContentGeneratorConfig: vi.fn(),
   createContentGenerator: vi.fn(),
   createConversationClient: vi.fn(() => mockConversationClient),
+  createToolingSupport: vi.fn(
+    () => new UnsupportedModelToolingSupport('mock-provider'),
+  ),
 };
 
 vi.mock('../providers/modelProviderRegistry.js', () => ({
@@ -192,6 +195,7 @@ vi.mock('../ide/ide-client.js', () => ({
 import { BaseLlmClient } from '../core/baseLlmClient.js';
 import { tokenLimit } from '../core/tokenLimits.js';
 import { uiTelemetryService } from '../telemetry/index.js';
+import { UnsupportedModelToolingSupport } from '../providers/modelToolingSupport.js';
 
 vi.mock('../core/baseLlmClient.js');
 vi.mock('../core/tokenLimits.js', () => ({

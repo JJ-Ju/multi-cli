@@ -65,7 +65,7 @@ describe('Flash Model Fallback Configuration', () => {
       expect(config.getModel()).toBe(DEFAULT_GEMINI_FLASH_MODEL);
     });
 
-    it('should fall back to initial model if contentGeneratorConfig is not available', () => {
+    it('should fall back to provider default model if contentGeneratorConfig is not available', () => {
       // Test with fresh config where contentGeneratorConfig might not be set
       const newConfig = new Config({
         sessionId: 'test-session-2',
@@ -75,7 +75,7 @@ describe('Flash Model Fallback Configuration', () => {
         model: 'custom-model',
       });
 
-      expect(newConfig.getModel()).toBe('custom-model');
+      expect(newConfig.getModel()).toBe(DEFAULT_GEMINI_MODEL);
     });
   });
 

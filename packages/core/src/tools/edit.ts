@@ -20,7 +20,6 @@ import { makeRelative, shortenPath } from '../utils/paths.js';
 import { isNodeError } from '../utils/errors.js';
 import type { Config } from '../config/config.js';
 import { ApprovalMode } from '../config/config.js';
-import { ensureCorrectEdit } from '../utils/editCorrector.js';
 import { DEFAULT_DIFF_OPTIONS, getDiffStat } from './diffOptions.js';
 import { ReadFileTool } from './read-file.js';
 import { logFileOperation } from '../telemetry/loggers.js';
@@ -55,6 +54,19 @@ export function applyReplacement(
 
   // Use intelligent replacement that handles $ sequences safely
   return safeLiteralReplace(currentContent, oldString, newString);
+}
+
+function countOccurrences(haystack: string, needle: string): number {
+  if (!needle) {
+    return 0;
+  }
+  let count = 0;
+  let index = haystack.indexOf(needle);
+  while (index !== -1) {
+    count++;
+    index = haystack.indexOf(needle, index + needle.length);
+  }
+  return count;
 }
 
 /**
@@ -131,6 +143,7 @@ class EditToolInvocation implements ToolInvocation<EditToolParams, ToolResult> {
     let error:
       | { display: string; raw: string; type: ToolErrorType }
       | undefined = undefined;
+    const toolingSupport = this.config.getToolingSupport();
 
     try {
       currentContent = await this.config
@@ -159,17 +172,24 @@ class EditToolInvocation implements ToolInvocation<EditToolParams, ToolResult> {
       };
     } else if (currentContent !== null) {
       // Editing an existing file
-      const correctedEdit = await ensureCorrectEdit(
-        params.file_path,
+      const correctedEdit = await toolingSupport.ensureCorrectEdit({
+        filePath: params.file_path,
         currentContent,
-        params,
-        this.config.getGeminiClient(),
-        this.config.getBaseLlmClient(),
+        originalParams: params,
         abortSignal,
-      );
-      finalOldString = correctedEdit.params.old_string;
-      finalNewString = correctedEdit.params.new_string;
-      occurrences = correctedEdit.occurrences;
+      });
+      const correctedParams = correctedEdit?.params ?? {
+        file_path: params.file_path,
+        old_string: params.old_string,
+        new_string: params.new_string,
+      };
+      finalOldString = correctedParams.old_string;
+      finalNewString = correctedParams.new_string;
+      occurrences =
+        correctedEdit?.occurrences ??
+        (currentContent !== null
+          ? countOccurrences(currentContent, finalOldString)
+          : 0);
 
       if (params.old_string === '') {
         // Error: Trying to create a file that already exists

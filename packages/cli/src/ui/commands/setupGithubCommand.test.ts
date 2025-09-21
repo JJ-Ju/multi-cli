@@ -112,7 +112,7 @@ describe('setupGithubCommand', async () => {
 
     if (gitignoreExists) {
       const gitignoreContent = await fs.readFile(gitignorePath, 'utf8');
-      expect(gitignoreContent).toContain('.gemini/');
+      expect(gitignoreContent).toContain('.ionesco/');
       expect(gitignoreContent).toContain('gha-creds-*.json');
     }
   });
@@ -135,7 +135,7 @@ describe('updateGitignore', () => {
     const gitignorePath = path.join(scratchDir, '.gitignore');
     const content = await fs.readFile(gitignorePath, 'utf8');
 
-    expect(content).toBe('.gemini/\ngha-creds-*.json\n');
+    expect(content).toBe('.ionesco/\ngha-creds-*.json\n');
   });
 
   it('appends entries to existing .gitignore file', async () => {
@@ -154,7 +154,7 @@ describe('updateGitignore', () => {
 
   it('does not add duplicate entries', async () => {
     const gitignorePath = path.join(scratchDir, '.gitignore');
-    const existingContent = '.gemini/\nsome-other-file\ngha-creds-*.json\n';
+    const existingContent = '.ionesco/\nsome-other-file\ngha-creds-*.json\n';
     await fs.writeFile(gitignorePath, existingContent);
 
     await updateGitignore(scratchDir);
@@ -166,7 +166,7 @@ describe('updateGitignore', () => {
 
   it('adds only missing entries when some already exist', async () => {
     const gitignorePath = path.join(scratchDir, '.gitignore');
-    const existingContent = '.gemini/\nsome-other-file\n';
+    const existingContent = '.ionesco/\nsome-other-file\n';
     await fs.writeFile(gitignorePath, existingContent);
 
     await updateGitignore(scratchDir);
@@ -174,7 +174,7 @@ describe('updateGitignore', () => {
     const content = await fs.readFile(gitignorePath, 'utf8');
 
     // Should add only the missing gha-creds-*.json entry
-    expect(content).toBe('.gemini/\nsome-other-file\n\ngha-creds-*.json\n');
+    expect(content).toBe('.ionesco/\nsome-other-file\n\ngha-creds-*.json\n');
     expect(content).toContain('gha-creds-*.json');
     // Should not duplicate .gemini/ entry
     expect((content.match(/\.gemini\//g) || []).length).toBe(1);
@@ -196,7 +196,7 @@ describe('updateGitignore', () => {
     const content = await fs.readFile(gitignorePath, 'utf8');
 
     // Should add both entries since they don't actually exist as gitignore rules
-    expect(content).toContain('.gemini/');
+    expect(content).toContain('.ionesco/');
     expect(content).toContain('gha-creds-*.json');
 
     // Verify the entries were added (not just mentioned in comments)
@@ -204,7 +204,7 @@ describe('updateGitignore', () => {
       .split('\n')
       .map((line) => line.split('#')[0].trim())
       .filter((line) => line);
-    expect(lines).toContain('.gemini/');
+    expect(lines).toContain('.ionesco/');
     expect(lines).toContain('gha-creds-*.json');
     expect(lines).toContain('my-app.gemini/config');
     expect(lines).toContain('some-other-gha-creds-file.json');

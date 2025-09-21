@@ -9,7 +9,8 @@ import * as os from 'node:os';
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 
-export const GEMINI_DIR = '.gemini';
+export const GEMINI_DIR = '.ionesco';
+const LEGACY_GEMINI_DIR = '.gemini';
 export const GOOGLE_ACCOUNTS_FILENAME = 'google_accounts.json';
 export const OAUTH_FILE = 'oauth_creds.json';
 const TMP_DIR_NAME = 'tmp';
@@ -25,9 +26,15 @@ export class Storage {
   static getGlobalGeminiDir(): string {
     const homeDir = os.homedir();
     if (!homeDir) {
-      return path.join(os.tmpdir(), '.gemini');
+      const fallbackDir = path.join(os.tmpdir(), GEMINI_DIR);
+      Storage.ensureConfigDirExists(fallbackDir);
+      return fallbackDir;
     }
-    return path.join(homeDir, GEMINI_DIR);
+
+    const targetDir = path.join(homeDir, GEMINI_DIR);
+    const legacyDir = path.join(homeDir, LEGACY_GEMINI_DIR);
+    Storage.ensureConfigDirExists(targetDir, legacyDir);
+    return targetDir;
   }
 
   static getMcpOAuthTokensPath(): string {
@@ -116,5 +123,30 @@ export class Storage {
 
   getHistoryFilePath(): string {
     return path.join(this.getProjectTempDir(), 'shell_history');
+  }
+
+  private static ensureConfigDirExists(
+    targetDir: string,
+    legacyDir?: string,
+  ): void {
+    if (fs.existsSync(targetDir)) {
+      return;
+    }
+
+    if (legacyDir && fs.existsSync(legacyDir)) {
+      try {
+        fs.mkdirSync(path.dirname(targetDir), { recursive: true });
+        fs.cpSync(legacyDir, targetDir, { recursive: true });
+        return;
+      } catch (_error) {
+        // Fall back to creating a fresh config directory if migration fails.
+      }
+    }
+
+    try {
+      fs.mkdirSync(targetDir, { recursive: true });
+    } catch (_error) {
+      // Ignore errors; downstream operations will surface critical failures.
+    }
   }
 }

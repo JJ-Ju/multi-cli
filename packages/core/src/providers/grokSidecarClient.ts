@@ -46,9 +46,38 @@ export interface ValidateResponsePayload {
   rawResponse: string;
 }
 
+export interface GrokToolResultPayload {
+  llmContent?: string;
+  returnDisplay?: string;
+  sources?: unknown;
+  error?: unknown;
+}
+
+export interface GrokEnsureCorrectEditPayload {
+  params: Record<string, unknown>;
+  occurrences: number;
+}
+
+export interface GrokEnsureCorrectFileContentPayload {
+  content: string;
+}
+
+export interface GrokFixEditWithInstructionPayload {
+  search: string;
+  replace: string;
+  noChangesRequired?: boolean;
+  explanation?: string;
+}
+
+export interface GrokSummarizeTextPayload {
+  summary: string;
+}
+
 interface CallWithStreamResult<T> {
+  requestId: string;
   result: Promise<T>;
   stream: EventEmitter;
+  cancel: () => void;
 }
 
 export class GrokSidecarClient {
@@ -97,6 +126,74 @@ export class GrokSidecarClient {
       return { passed: false, rawResponse: '' };
     }
     return response;
+  }
+
+  webSearch(
+    query: string,
+    options: Record<string, unknown> = {},
+    abortSignal?: AbortSignal,
+  ): Promise<GrokToolResultPayload> {
+    return this.callWithAbort<GrokToolResultPayload>(
+      'tooling.webSearch',
+      { query, options },
+      abortSignal,
+    );
+  }
+
+  webFetch(
+    prompt: string,
+    options: Record<string, unknown> = {},
+    abortSignal?: AbortSignal,
+  ): Promise<GrokToolResultPayload> {
+    return this.callWithAbort<GrokToolResultPayload>(
+      'tooling.webFetch',
+      { prompt, options },
+      abortSignal,
+    );
+  }
+
+  ensureCorrectEdit(
+    payload: Record<string, unknown>,
+    abortSignal?: AbortSignal,
+  ): Promise<GrokEnsureCorrectEditPayload> {
+    return this.callWithAbort<GrokEnsureCorrectEditPayload>(
+      'tooling.ensureCorrectEdit',
+      payload,
+      abortSignal,
+    );
+  }
+
+  ensureCorrectFileContent(
+    payload: Record<string, unknown>,
+    abortSignal?: AbortSignal,
+  ): Promise<GrokEnsureCorrectFileContentPayload> {
+    return this.callWithAbort<GrokEnsureCorrectFileContentPayload>(
+      'tooling.ensureCorrectFileContent',
+      payload,
+      abortSignal,
+    );
+  }
+
+  fixEditWithInstruction(
+    payload: Record<string, unknown>,
+    abortSignal?: AbortSignal,
+  ): Promise<GrokFixEditWithInstructionPayload> {
+    return this.callWithAbort<GrokFixEditWithInstructionPayload>(
+      'tooling.fixEditWithInstruction',
+      payload,
+      abortSignal,
+    );
+  }
+
+  summarizeText(
+    payload: Record<string, unknown>,
+    abortSignal?: AbortSignal,
+  ): Promise<GrokSummarizeTextPayload> {
+    return this.callWithAbort<GrokSummarizeTextPayload>(
+      'tooling.summarizeText',
+      payload,
+      abortSignal,
+    );
   }
 
   chatStream(
@@ -236,9 +333,43 @@ export class GrokSidecarClient {
     );
   }
 
+  private callWithAbort<T>(
+    action: string,
+    payload: unknown,
+    abortSignal?: AbortSignal,
+  ): Promise<T> {
+    const { result, cancel } = this.callWithStream(action, payload);
+
+    if (!abortSignal) {
+      return result as Promise<T>;
+    }
+
+    if (abortSignal.aborted) {
+      cancel();
+      return Promise.reject(createAbortError());
+    }
+
+    return new Promise<T>((resolve, reject) => {
+      const onAbort = () => {
+        cancel();
+        reject(createAbortError());
+      };
+
+      abortSignal.addEventListener('abort', onAbort, { once: true });
+      (result as Promise<T>)
+        .then((value) => {
+          abortSignal.removeEventListener('abort', onAbort);
+          resolve(value as T);
+        })
+        .catch((error) => {
+          abortSignal.removeEventListener('abort', onAbort);
+          reject(error);
+        });
+    });
+  }
+
   private async call(action: string, payload: unknown): Promise<unknown> {
-    const { result } = this.callWithStream(action, payload);
-    return result;
+    return this.callWithAbort(action, payload);
   }
 
   private callWithStream(
@@ -249,9 +380,11 @@ export class GrokSidecarClient {
     const requestId = randomUUID();
 
     const stream = new EventEmitter();
+    let pendingEntry: PendingRequest | undefined;
 
     const resultPromise = new Promise<unknown>((resolve, reject) => {
-      this.pending.set(requestId, { resolve, reject, stream });
+      pendingEntry = { resolve, reject, stream };
+      this.pending.set(requestId, pendingEntry);
     });
 
     const message = {
@@ -268,6 +401,18 @@ export class GrokSidecarClient {
     });
 
     child.stdin.write(`${JSON.stringify(message)}\n`);
+
+    const cancel = () => {
+      if (!pendingEntry) {
+        return;
+      }
+      const current = this.pending.get(requestId);
+      if (current !== pendingEntry) {
+        return;
+      }
+      this.pending.delete(requestId);
+      pendingEntry.reject(createAbortError());
+    };
     const finalize = () => {
       stream.emit('end');
     };
@@ -279,7 +424,7 @@ export class GrokSidecarClient {
       finalize();
     });
 
-    return { result: resultPromise, stream };
+    return { requestId, result: resultPromise, stream, cancel };
   }
 
   private handleLine(line: string): void {
@@ -329,6 +474,12 @@ export class GrokSidecarClient {
   }
 }
 
+function createAbortError(): Error {
+  const error = new Error('The operation was aborted.');
+  error.name = 'AbortError';
+  return error;
+}
+
 function summarisePayload(
   action: string,
   payload: unknown,
@@ -343,6 +494,16 @@ function summarisePayload(
       messageCount: chatPayload.messages?.length,
       toolCount: chatPayload.tools?.length,
     };
+  }
+
+  if (action === 'tooling.webSearch') {
+    const { query } = payload as { query?: string };
+    return { queryLength: query?.length ?? 0 };
+  }
+
+  if (action === 'tooling.webFetch') {
+    const { prompt } = payload as { prompt?: string };
+    return { promptLength: prompt?.length ?? 0 };
   }
 
   if (action === 'initialize') {

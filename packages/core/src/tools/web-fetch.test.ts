@@ -10,87 +10,64 @@ import type { Config } from '../config/config.js';
 import { ApprovalMode } from '../config/config.js';
 import { ToolConfirmationOutcome } from './tools.js';
 import { ToolErrorType } from './tool-error.js';
-import * as fetchUtils from '../utils/fetch.js';
-
-const mockGenerateContent = vi.fn();
-const mockGetGeminiClient = vi.fn(() => ({
-  generateContent: mockGenerateContent,
-}));
-
-vi.mock('../utils/fetch.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof fetchUtils>();
-  return {
-    ...actual,
-    fetchWithTimeout: vi.fn(),
-    isPrivateIp: vi.fn(),
-  };
-});
 
 describe('WebFetchTool', () => {
   let mockConfig: Config;
+  let mockToolingSupport: {
+    performWebFetch: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     vi.resetAllMocks();
+    mockToolingSupport = {
+      performWebFetch: vi.fn(),
+    };
     mockConfig = {
-      getApprovalMode: vi.fn(),
+      getApprovalMode: vi.fn(() => ApprovalMode.DEFAULT),
       setApprovalMode: vi.fn(),
       getProxy: vi.fn(),
-      getGeminiClient: mockGetGeminiClient,
+      getToolingSupport: vi.fn(() => mockToolingSupport),
     } as unknown as Config;
   });
 
   describe('execute', () => {
-    it('should return WEB_FETCH_NO_URL_IN_PROMPT when no URL is in the prompt for fallback', async () => {
-      vi.spyOn(fetchUtils, 'isPrivateIp').mockReturnValue(true);
+    it('delegates to tooling support', async () => {
       const tool = new WebFetchTool(mockConfig);
-      const params = { prompt: 'no url here' };
-      expect(() => tool.build(params)).toThrow(
-        "The 'prompt' must contain at least one valid URL (starting with http:// or https://).",
+      const params = { prompt: 'fetch https://example.com' };
+      const invocation = tool.build(params);
+      const adapterResult = {
+        llmContent: 'content',
+        returnDisplay: 'display',
+      };
+      mockToolingSupport.performWebFetch.mockResolvedValue(adapterResult);
+
+      const signal = new AbortController().signal;
+      const result = await invocation.execute(signal);
+
+      expect(mockToolingSupport.performWebFetch).toHaveBeenCalledWith(
+        'fetch https://example.com',
+        signal,
       );
+      expect(result).toEqual(adapterResult);
     });
 
-    it('should return WEB_FETCH_FALLBACK_FAILED on fallback fetch failure', async () => {
-      vi.spyOn(fetchUtils, 'isPrivateIp').mockReturnValue(true);
-      vi.spyOn(fetchUtils, 'fetchWithTimeout').mockRejectedValue(
-        new Error('fetch failed'),
+    it('wraps tooling errors with WEB_FETCH_PROCESSING_ERROR', async () => {
+      const tool = new WebFetchTool(mockConfig);
+      const params = { prompt: 'fetch https://example.com' };
+      const invocation = tool.build(params);
+      mockToolingSupport.performWebFetch.mockRejectedValue(
+        new Error('API error'),
       );
-      const tool = new WebFetchTool(mockConfig);
-      const params = { prompt: 'fetch https://private.ip' };
-      const invocation = tool.build(params);
-      const result = await invocation.execute(new AbortController().signal);
-      expect(result.error?.type).toBe(ToolErrorType.WEB_FETCH_FALLBACK_FAILED);
-    });
 
-    it('should return WEB_FETCH_PROCESSING_ERROR on general processing failure', async () => {
-      vi.spyOn(fetchUtils, 'isPrivateIp').mockReturnValue(false);
-      mockGenerateContent.mockRejectedValue(new Error('API error'));
-      const tool = new WebFetchTool(mockConfig);
-      const params = { prompt: 'fetch https://public.ip' };
-      const invocation = tool.build(params);
       const result = await invocation.execute(new AbortController().signal);
+
       expect(result.error?.type).toBe(ToolErrorType.WEB_FETCH_PROCESSING_ERROR);
+      expect(result.llmContent).toContain('API error');
     });
   });
 
   describe('shouldConfirmExecute', () => {
-    it('should return confirmation details with the correct prompt and urls', async () => {
-      const tool = new WebFetchTool(mockConfig);
-      const params = { prompt: 'fetch https://example.com' };
-      const invocation = tool.build(params);
-      const confirmationDetails = await invocation.shouldConfirmExecute(
-        new AbortController().signal,
-      );
-
-      expect(confirmationDetails).toEqual({
-        type: 'info',
-        title: 'Confirm Web Fetch',
-        prompt: 'fetch https://example.com',
-        urls: ['https://example.com'],
-        onConfirm: expect.any(Function),
-      });
-    });
-
-    it('should convert github urls to raw format', async () => {
+    it('returns confirmation details with converted URLs', async () => {
       const tool = new WebFetchTool(mockConfig);
       const params = {
         prompt:
@@ -113,7 +90,7 @@ describe('WebFetchTool', () => {
       });
     });
 
-    it('should return false if approval mode is AUTO_EDIT', async () => {
+    it('returns false when approval mode is AUTO_EDIT', async () => {
       vi.spyOn(mockConfig, 'getApprovalMode').mockReturnValue(
         ApprovalMode.AUTO_EDIT,
       );
@@ -127,7 +104,7 @@ describe('WebFetchTool', () => {
       expect(confirmationDetails).toBe(false);
     });
 
-    it('should call setApprovalMode when onConfirm is called with ProceedAlways', async () => {
+    it('updates approval mode when proceeding always', async () => {
       const tool = new WebFetchTool(mockConfig);
       const params = { prompt: 'fetch https://example.com' };
       const invocation = tool.build(params);

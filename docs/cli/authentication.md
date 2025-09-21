@@ -119,17 +119,17 @@ The Ionesco CLI requires you to authenticate with Google's AI services. On initi
 
 ### Persisting Environment Variables with `.env` Files
 
-You can create a **`.gemini/.env`** file in your project directory or in your home directory. Creating a plain **`.env`** file also works, but `.gemini/.env` is recommended to keep Gemini variables isolated from other tools.
+You can create a **`.ionesco/.env`** file in your project directory or in your home directory. Creating a plain **`.env`** file also works, but `.ionesco/.env` is recommended to keep Gemini variables isolated from other tools.
 
-**Important:** Some environment variables (like `DEBUG` and `DEBUG_MODE`) are automatically excluded from project `.env` files to prevent interference with gemini-cli behavior. Use `.gemini/.env` files for gemini-cli specific variables.
+**Important:** Some environment variables (like `DEBUG` and `DEBUG_MODE`) are automatically excluded from project `.env` files to prevent interference with gemini-cli behavior. Use `.ionesco/.env` files for gemini-cli specific variables.
 
 Ionesco CLI automatically loads environment variables from the **first** `.env` file it finds, using the following search order:
 
 1. Starting in the **current directory** and moving upward toward `/`, for each directory it checks:
-   1. `.gemini/.env`
+   1. `.ionesco/.env`
    2. `.env`
 2. If no file is found, it falls back to your **home directory**:
-   - `~/.gemini/.env`
+   - `~/.ionesco/.env`
    - `~/.env`
 
 > **Important:** The search stops at the **first** file encountered—variables are **not merged** across multiple files.
@@ -139,15 +139,15 @@ Ionesco CLI automatically loads environment variables from the **first** `.env` 
 **Project-specific overrides** (take precedence when you are inside the project):
 
 ```bash
-mkdir -p .gemini
-echo 'GOOGLE_CLOUD_PROJECT="your-project-id"' >> .gemini/.env
+mkdir -p .ionesco
+echo 'GOOGLE_CLOUD_PROJECT="your-project-id"' >> .ionesco/.env
 ```
 
 **User-wide settings** (available in every directory):
 
 ```bash
-mkdir -p ~/.gemini
-cat >> ~/.gemini/.env <<'EOF'
+mkdir -p ~/.ionesco
+cat >> ~/.ionesco/.env <<'EOF'
 GOOGLE_CLOUD_PROJECT="your-project-id"
 GEMINI_API_KEY="your-gemini-api-key"
 EOF

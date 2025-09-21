@@ -12,7 +12,12 @@ import type {
 import { GeminiClient } from '../core/client.js';
 import type { ModelProvider } from './types.js';
 import { GrokSidecarClient } from './grokSidecarClient.js';
+import {
+  type ModelToolingSupport,
+  type ModelToolingSupportDependencies,
+} from './modelToolingSupport.js';
 import { GrokContentGenerator } from './grokContentGenerator.js';
+import { GrokToolingSupport } from './grokToolingSupport.js';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -72,6 +77,19 @@ export class GrokProvider implements ModelProvider {
 
   createConversationClient(config: Config): GeminiClient {
     return new GeminiClient(config);
+  }
+
+  createToolingSupport(
+    config: Config,
+    _dependencies: ModelToolingSupportDependencies,
+  ): ModelToolingSupport {
+    this.ensureEnvironment();
+    const sidecar = this.ensureSidecar();
+    return new GrokToolingSupport(sidecar, {
+      apiKey: process.env['GROK_API_KEY'] || '',
+      model: config.getModel(),
+      pythonPath: process.env['GROK_PYTHON_BIN'],
+    });
   }
 
   private ensureSidecar(): GrokSidecarClient {
@@ -158,7 +176,7 @@ export class GrokProvider implements ModelProvider {
 
   private resolveLocations(): { packageRoot: string } {
     const currentDir = path.dirname(fileURLToPath(import.meta.url));
-    const packageRoot = path.resolve(currentDir, '../../../../');
+    const packageRoot = path.resolve(currentDir, '../../../../../');
     return { packageRoot };
   }
 }

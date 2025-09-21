@@ -64,6 +64,7 @@ export * from './services/fileSystemService.js';
 
 // Export provider abstractions
 export * from './providers/types.js';
+export * from './providers/modelToolingSupport.js';
 export { ModelProviderRegistryImpl } from './providers/modelProviderRegistry.js';
 export { GrokProvider } from './providers/grokProvider.js';
 export { logGrokDebug } from './providers/grokDebugLogger.js';

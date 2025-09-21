@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 import sys
+from unittest import mock
 
 _PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 if str(_PACKAGE_ROOT) not in sys.path:
@@ -22,7 +23,12 @@ from xai_sdk.chat import Chunk, Response, chat_pb2, usage_pb2
 from xai_sdk.collections import collections_pb2
 
 
-def _make_response(text: str, total_tokens: int = 5) -> Response:
+def _make_response(
+    text: str,
+    total_tokens: int = 5,
+    *,
+    citations: list[str] | None = None,
+) -> Response:
     response_pb = chat_pb2.GetChatCompletionResponse(
         id="resp-1",
         model="grok-beta",
@@ -37,6 +43,8 @@ def _make_response(text: str, total_tokens: int = 5) -> Response:
             )
         ],
     )
+    if citations:
+        response_pb.citations.extend(citations)
     return Response(response_pb, 0)
 
 
@@ -266,6 +274,80 @@ class GrokServiceTest(unittest.TestCase):
             result.message["content"][0]["text"],
             tool_chat._final_response,
         )
+
+    def test_web_search_returns_result(self) -> None:
+        client = _ClientStub()
+        response = _make_response(
+            "Search answer",
+            citations=["https://example.com"],
+        )
+        client.chat.queue(_ValidateChat(response))
+
+        service = GrokService(client_factory=lambda **_: client)
+        service.initialise(api_key="secret")
+
+        result = service.web_search(query="latest news")
+
+        self.assertIn("Search answer", result["llmContent"])
+        self.assertEqual(result["sources"], ["https://example.com"])
+
+    @mock.patch('grok_sidecar.service.urllib_request.urlopen')
+    def test_web_fetch_fetches_and_summarises(self, mock_urlopen: mock.MagicMock) -> None:
+        client = _ClientStub()
+        client.chat.queue(_ValidateChat(_make_response("Summary output")))
+
+        service = GrokService(client_factory=lambda **_: client)
+        service.initialise(api_key="secret")
+
+        fake_handle = mock.MagicMock()
+        fake_handle.__enter__.return_value = fake_handle
+        fake_handle.__exit__.return_value = False
+        fake_handle.read.return_value = b"<html><body>Hello</body></html>"
+        fake_handle.headers.get_content_charset.return_value = 'utf-8'
+        mock_urlopen.return_value = fake_handle
+
+        result = service.web_fetch(prompt="Summarise https://example.com/article")
+
+        self.assertIn("Summary output", result["llmContent"])
+        self.assertEqual(result["sources"], ["https://example.com/article"])
+        mock_urlopen.assert_called_once()
+
+    def test_ensure_correct_edit_uses_llm_suggestion(self) -> None:
+        client = _ClientStub()
+        client.chat.queue(
+            _ValidateChat(
+                _make_response('{"old_string":"foo","new_string":"bar"}')
+            )
+        )
+
+        service = GrokService(client_factory=lambda **_: client)
+        service.initialise(api_key="secret")
+
+        result = service.ensure_correct_edit(
+            filePath="test.py",
+            currentContent="foo foo foo",
+            originalParams={
+                "file_path": "test.py",
+                "old_string": "baz",
+                "new_string": "qux",
+            },
+            instruction="",
+        )
+
+        self.assertEqual(result["params"]["old_string"], "foo")
+        self.assertEqual(result["params"]["new_string"], "bar")
+        self.assertEqual(result["occurrences"], 3)
+
+    def test_summarize_text_returns_summary(self) -> None:
+        client = _ClientStub()
+        client.chat.queue(_ValidateChat(_make_response("short summary")))
+
+        service = GrokService(client_factory=lambda **_: client)
+        service.initialise(api_key="secret")
+
+        result = service.summarize_text(text="long text", max_output_tokens=128)
+
+        self.assertEqual(result["summary"], "short summary")
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -26,10 +26,6 @@ import {
 import { ToolErrorType } from './tool-error.js';
 import { makeRelative, shortenPath } from '../utils/paths.js';
 import { getErrorMessage, isNodeError } from '../utils/errors.js';
-import {
-  ensureCorrectEdit,
-  ensureCorrectFileContent,
-} from '../utils/editCorrector.js';
 import { DEFAULT_DIFF_OPTIONS, getDiffStat } from './diffOptions.js';
 import type {
   ModifiableDeclarativeTool,
@@ -83,6 +79,7 @@ export async function getCorrectedFileContent(
   let originalContent = '';
   let fileExists = false;
   let correctedContent = proposedContent;
+  const toolingSupport = config.getToolingSupport();
 
   try {
     originalContent = await config
@@ -112,24 +109,21 @@ export async function getCorrectedFileContent(
 
   if (fileExists) {
     // This implies originalContent is available
-    const { params: correctedParams } = await ensureCorrectEdit(
+    const { params: correctedParams } = await toolingSupport.ensureCorrectEdit({
       filePath,
-      originalContent,
-      {
+      currentContent: originalContent,
+      originalParams: {
         old_string: originalContent, // Treat entire current content as old_string
         new_string: proposedContent,
         file_path: filePath,
       },
-      config.getGeminiClient(),
-      config.getBaseLlmClient(),
       abortSignal,
-    );
+    });
     correctedContent = correctedParams.new_string;
   } else {
     // This implies new file (ENOENT)
-    correctedContent = await ensureCorrectFileContent(
+    correctedContent = await toolingSupport.ensureCorrectFileContent(
       proposedContent,
-      config.getBaseLlmClient(),
       abortSignal,
     );
   }

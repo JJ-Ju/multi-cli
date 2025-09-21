@@ -21,7 +21,6 @@ vi.mock('../services/shellExecutionService.js', () => ({
 vi.mock('fs');
 vi.mock('os');
 vi.mock('crypto');
-vi.mock('../utils/summarizer.js');
 
 import { isCommandAllowed } from '../utils/shell-utils.js';
 import { ShellTool } from './shell.js';
@@ -35,7 +34,6 @@ import * as os from 'node:os';
 import { EOL } from 'node:os';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
-import * as summarizer from '../utils/summarizer.js';
 import { ToolErrorType } from './tool-error.js';
 import { ToolConfirmationOutcome } from './tools.js';
 import { OUTPUT_UPDATE_INTERVAL_MS } from './shell.js';
@@ -46,9 +44,26 @@ describe('ShellTool', () => {
   let mockConfig: Config;
   let mockShellOutputCallback: (event: ShellOutputEvent) => void;
   let resolveExecutionPromise: (result: ShellExecutionResult) => void;
+  let mockToolingSupport: {
+    summarizeText: ReturnType<typeof vi.fn>;
+    performWebSearch: ReturnType<typeof vi.fn>;
+    performWebFetch: ReturnType<typeof vi.fn>;
+    ensureCorrectEdit: ReturnType<typeof vi.fn>;
+    ensureCorrectFileContent: ReturnType<typeof vi.fn>;
+    fixEditWithInstruction: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    mockToolingSupport = {
+      summarizeText: vi.fn(),
+      performWebSearch: vi.fn(),
+      performWebFetch: vi.fn(),
+      ensureCorrectEdit: vi.fn(),
+      ensureCorrectFileContent: vi.fn(),
+      fixEditWithInstruction: vi.fn(),
+    };
 
     mockConfig = {
       getCoreTools: vi.fn().mockReturnValue([]),
@@ -61,6 +76,7 @@ describe('ShellTool', () => {
         .mockReturnValue(createMockWorkspaceContext('/test/dir')),
       getGeminiClient: vi.fn(),
       getShouldUseNodePtyShell: vi.fn().mockReturnValue(false),
+      getToolingSupport: vi.fn().mockReturnValue(mockToolingSupport),
     } as unknown as Config;
 
     shellTool = new ShellTool(mockConfig);
@@ -283,9 +299,7 @@ describe('ShellTool', () => {
       (mockConfig.getSummarizeToolOutputConfig as Mock).mockReturnValue({
         [shellTool.name]: { tokenBudget: 1000 },
       });
-      vi.mocked(summarizer.summarizeToolOutput).mockResolvedValue(
-        'summarized output',
-      );
+      mockToolingSupport.summarizeText.mockResolvedValue('summarized output');
 
       const invocation = shellTool.build({ command: 'ls' });
       const promise = invocation.execute(mockAbortSignal);
@@ -302,12 +316,11 @@ describe('ShellTool', () => {
 
       const result = await promise;
 
-      expect(summarizer.summarizeToolOutput).toHaveBeenCalledWith(
-        expect.any(String),
-        mockConfig.getGeminiClient(),
-        mockAbortSignal,
-        1000,
-      );
+      expect(mockToolingSupport.summarizeText).toHaveBeenCalledWith({
+        text: expect.any(String),
+        abortSignal: mockAbortSignal,
+        maxOutputTokens: 1000,
+      });
       expect(result.llmContent).toBe('summarized output');
       expect(result.returnDisplay).toBe('long output');
     });

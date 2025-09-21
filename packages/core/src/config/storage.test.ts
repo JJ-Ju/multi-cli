@@ -13,14 +13,15 @@ vi.mock('fs', async (importOriginal) => {
   return {
     ...actual,
     mkdirSync: vi.fn(),
+    cpSync: vi.fn(),
   };
 });
 
-import { Storage } from './storage.js';
+import { Storage, GEMINI_DIR } from './storage.js';
 
 describe('Storage – getGlobalSettingsPath', () => {
   it('returns path to ~/.gemini/settings.json', () => {
-    const expected = path.join(os.homedir(), '.gemini', 'settings.json');
+    const expected = path.join(os.homedir(), GEMINI_DIR, 'settings.json');
     expect(Storage.getGlobalSettingsPath()).toBe(expected);
   });
 });
@@ -30,31 +31,31 @@ describe('Storage – additional helpers', () => {
   const storage = new Storage(projectRoot);
 
   it('getWorkspaceSettingsPath returns project/.gemini/settings.json', () => {
-    const expected = path.join(projectRoot, '.gemini', 'settings.json');
+    const expected = path.join(projectRoot, GEMINI_DIR, 'settings.json');
     expect(storage.getWorkspaceSettingsPath()).toBe(expected);
   });
 
   it('getUserCommandsDir returns ~/.gemini/commands', () => {
-    const expected = path.join(os.homedir(), '.gemini', 'commands');
+    const expected = path.join(os.homedir(), GEMINI_DIR, 'commands');
     expect(Storage.getUserCommandsDir()).toBe(expected);
   });
 
   it('getProjectCommandsDir returns project/.gemini/commands', () => {
-    const expected = path.join(projectRoot, '.gemini', 'commands');
+    const expected = path.join(projectRoot, GEMINI_DIR, 'commands');
     expect(storage.getProjectCommandsDir()).toBe(expected);
   });
 
   it('getMcpOAuthTokensPath returns ~/.gemini/mcp-oauth-tokens.json', () => {
     const expected = path.join(
       os.homedir(),
-      '.gemini',
+      GEMINI_DIR,
       'mcp-oauth-tokens.json',
     );
     expect(Storage.getMcpOAuthTokensPath()).toBe(expected);
   });
 
   it('getGlobalBinDir returns ~/.gemini/tmp/bin', () => {
-    const expected = path.join(os.homedir(), '.gemini', 'tmp', 'bin');
+    const expected = path.join(os.homedir(), GEMINI_DIR, 'tmp', 'bin');
     expect(Storage.getGlobalBinDir()).toBe(expected);
   });
 });

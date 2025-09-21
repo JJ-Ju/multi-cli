@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  AuthType} from '../core/contentGenerator.js';
+import type { AuthType } from '../core/contentGenerator.js';
 import {
   createContentGenerator,
   createContentGeneratorConfig,
@@ -15,6 +14,11 @@ import {
 import { GeminiClient } from '../core/client.js';
 import type { Config } from '../config/config.js';
 import { DEFAULT_GEMINI_MODEL } from '../config/models.js';
+import {
+  type ModelToolingSupport,
+  type ModelToolingSupportDependencies,
+} from './modelToolingSupport.js';
+import { GoogleToolingSupport } from './googleToolingSupport.js';
 import type { ModelProvider } from './types.js';
 
 /**
@@ -52,5 +56,12 @@ export class GoogleGenAIProvider implements ModelProvider {
 
   createConversationClient(config: Config): GeminiClient {
     return new GeminiClient(config);
+  }
+
+  createToolingSupport(
+    config: Config,
+    dependencies: ModelToolingSupportDependencies,
+  ): ModelToolingSupport {
+    return new GoogleToolingSupport(config, dependencies);
   }
 }

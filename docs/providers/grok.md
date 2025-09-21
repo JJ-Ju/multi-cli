@@ -23,7 +23,7 @@ Google Gemini provider while the CLI is running.
 
    ```bash
    npm install
-   ./scripts/setup.sh
+   ./setup.sh
    ```
 
    The setup script creates a dedicated virtual environment under
@@ -51,7 +51,7 @@ Google Gemini provider while the CLI is running.
 Use the platform helper script so the correct virtual environment is detected:
 
 ```bash
-./scripts/start.sh          # Unix
+./start.sh          # Unix
 scripts\start.bat           # Windows PowerShell / CMD
 ```
 
@@ -80,7 +80,7 @@ confirm which backend is responding.
   explicitly to the interpreter path.
 - **Tool call appears to hang** – tail `grok-debug.log` (or the file named in
   `GROK_DEBUG_LOG_FILE`) to confirm the sidecar is receiving tool results. If
-  necessary, rerun `./scripts/setup.sh` to upgrade the `xai-sdk` dependencies.
+  necessary, rerun `./setup.sh` to upgrade the `xai-sdk` dependencies.
 
 For deeper implementation details see
 [docs/design/grok-provider.md](../design/grok-provider.md).

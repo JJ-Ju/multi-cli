@@ -31,8 +31,8 @@ This guide provides solutions to common issues and debugging tips, including top
 
 - **Q: Where are the Ionesco CLI configuration or settings files stored?**
   - A: The Ionesco CLI configuration is stored in two `settings.json` files:
-    1. In your home directory: `~/.gemini/settings.json`.
-    2. In your project's root directory: `./.gemini/settings.json`.
+    1. In your home directory: `~/.ionesco/settings.json`.
+    2. In your project's root directory: `./.ionesco/settings.json`.
 
     Refer to [Ionesco CLI Configuration](./cli/configuration.md) for more details.
 
@@ -72,7 +72,7 @@ This guide provides solutions to common issues and debugging tips, including top
 - **DEBUG mode not working from project .env file**
   - **Issue:** Setting `DEBUG=true` in a project's `.env` file doesn't enable debug mode for gemini-cli.
   - **Cause:** The `DEBUG` and `DEBUG_MODE` variables are automatically excluded from project `.env` files to prevent interference with gemini-cli behavior.
-  - **Solution:** Use a `.gemini/.env` file instead, or configure the `advanced.excludedEnvVars` setting in your `settings.json` to exclude fewer variables.
+  - **Solution:** Use a `.ionesco/.env` file instead, or configure the `advanced.excludedEnvVars` setting in your `settings.json` to exclude fewer variables.
 
 ## Exit Codes
 

@@ -66,8 +66,9 @@ class SidecarRunner:
                 self._send_error(request_id, "Missing requestId or action")
                 continue
 
+            handler_name = f"_handle_{action.replace('.', '_')}"
             try:
-                handler = getattr(self, f"_handle_{action}")
+                handler = getattr(self, handler_name)
             except AttributeError:
                 self._send_error(request_id, f"Unknown action: {action}")
                 continue
@@ -197,6 +198,38 @@ class SidecarRunner:
 
         acknowledgement = {"callId": call_id, "acknowledged": True}
         self._send_result(request_id, acknowledgement)
+
+    def _handle_tooling_webSearch(self, request_id: str, payload: dict) -> None:
+        query = payload.get("query", "")
+        options = payload.get("options") or {}
+        result = self._service.web_search(query=query, **options)
+        self._send_result(request_id, result)
+
+    def _handle_tooling_webFetch(self, request_id: str, payload: dict) -> None:
+        prompt = payload.get("prompt", "")
+        options = payload.get("options") or {}
+        result = self._service.web_fetch(prompt=prompt, **options)
+        self._send_result(request_id, result)
+
+    def _handle_tooling_ensureCorrectEdit(self, request_id: str, payload: dict) -> None:
+        result = self._service.ensure_correct_edit(**payload)
+        self._send_result(request_id, result)
+
+    def _handle_tooling_ensureCorrectFileContent(
+        self, request_id: str, payload: dict
+    ) -> None:
+        result = self._service.ensure_correct_file_content(**payload)
+        self._send_result(request_id, result)
+
+    def _handle_tooling_fixEditWithInstruction(
+        self, request_id: str, payload: dict
+    ) -> None:
+        result = self._service.fix_edit_with_instruction(**payload)
+        self._send_result(request_id, result)
+
+    def _handle_tooling_summarizeText(self, request_id: str, payload: dict) -> None:
+        result = self._service.summarize_text(**payload)
+        self._send_result(request_id, result)
 
     def _handle_upload(self, request_id: str, payload: dict) -> None:
         result = self._service.upload(

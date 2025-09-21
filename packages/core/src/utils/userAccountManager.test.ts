@@ -30,7 +30,7 @@ describe('UserAccountManager', () => {
     );
     (os.homedir as Mock).mockReturnValue(tempHomeDir);
     accountsFile = () =>
-      path.join(tempHomeDir, '.gemini', 'google_accounts.json');
+      path.join(tempHomeDir, '.ionesco', 'google_accounts.json');
     userAccountManager = new UserAccountManager();
   });
 

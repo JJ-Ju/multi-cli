@@ -29,7 +29,6 @@ import {
   type ModifyContext,
 } from './modifiable-tool.js';
 import { IdeClient } from '../ide/ide-client.js';
-import { FixLLMEditWithInstruction } from '../utils/llm-edit-fixer.js';
 import { applyReplacement } from './edit.js';
 import { safeLiteralReplace } from '../utils/textUtils.js';
 
@@ -287,15 +286,16 @@ class EditToolInvocation implements ToolInvocation<EditToolParams, ToolResult> {
     abortSignal: AbortSignal,
     originalLineEnding: '\r\n' | '\n',
   ): Promise<CalculatedEdit> {
-    const fixedEdit = await FixLLMEditWithInstruction(
-      params.instruction,
-      params.old_string,
-      params.new_string,
-      initialError.raw,
-      currentContent,
-      this.config.getBaseLlmClient(),
-      abortSignal,
-    );
+    const fixedEdit = await this.config
+      .getToolingSupport()
+      .fixEditWithInstruction({
+        instruction: params.instruction,
+        oldString: params.old_string,
+        newString: params.new_string,
+        error: initialError.raw,
+        currentContent,
+        abortSignal,
+      });
 
     if (fixedEdit.noChangesRequired) {
       return {
