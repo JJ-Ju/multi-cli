@@ -2,7 +2,6 @@
 
 [![Ionesco CLI CI](https://github.com/google-gemini/gemini-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/google-gemini/gemini-cli/actions/workflows/ci.yml)
 [![Ionesco CLI E2E](https://github.com/google-gemini/gemini-cli/actions/workflows/e2e.yml/badge.svg)](https://github.com/google-gemini/gemini-cli/actions/workflows/e2e.yml)
-[![Version](https://img.shields.io/npm/v/@google/gemini-cli)](https://www.npmjs.com/package/@google/gemini-cli)
 [![License](https://img.shields.io/github/license/google-gemini/gemini-cli)](https://github.com/google-gemini/gemini-cli/blob/main/LICENSE)
 
 ![Ionesco CLI Screenshot](./docs/assets/gemini-screenshot.png)
@@ -24,59 +23,35 @@ Ionesco CLI builds on the open-source [Gemini CLI](https://github.com/google-gem
 
 ## 📦 Installation
 
-### Quick Install
-
-#### Run instantly with npx
-
-```bash
-# Using npx (no installation required)
-npx https://github.com/google-gemini/gemini-cli
-```
-
-#### Install globally with npm
-
-```bash
-npm install -g @google/gemini-cli
-```
-
-#### Install globally with Homebrew (macOS/Linux)
-
-```bash
-brew install gemini-cli
-```
-
-#### System Requirements
+### System Requirements
 
 - Node.js version 20 or higher
 - macOS, Linux, or Windows
 
-## Release Cadence and Tags
+## Provider Setup
 
-See [Releases](./docs/releases.md) for more details.
+### Google Gemini
 
-### Preview
+The default configuration continues to use Google's Gemini models. Configure API keys and authentication as described in [docs/cli/authentication.md](./docs/cli/authentication.md).
 
-New preview releases will be published each week at UTC 2359 on Tuesdays. These releases will not have been fully vetted and may contain regressions or other outstanding issues. Please help us test and install with `preview` tag.
+### Grok (xAI)
 
-```bash
-npm install -g @google/gemini-cli@preview
-```
+Ionesco CLI ships with an experimental Grok provider backed by the Python sidecar under `providers/grok_sidecar/`.
 
-### Stable
+1. Run `./scripts/setup.sh` (or `scripts\setup.bat` on Windows) to create the sidecar virtualenv and install dependencies.
+2. Copy `providers/grok_sidecar/.env.example` to `.env` and add:
+   ```bash
+   GROK_API_KEY=your_api_key
+   GROK_MODEL=your_preferred_model_id   # optional; defaults to grok-4-fast-reasoning-latest
+   ```
+3. Launch the CLI (`./scripts/start.sh` or `scripts\start.bat`).
+4. Switch providers inside the session:
+   ```
+   /agent list          # show available providers
+   /agent use grok      # activate Grok provider
+   ```
 
-- New stable releases will be published each week at UTC 2000 on Tuesdays, this will be the full promotion of last week's `preview` release + any bug fixes and validations. Use `latest` tag.
-
-```bash
-npm install -g @google/gemini-cli@latest
-```
-
-### Nightly
-
-- New releases will be published each week at UTC 0000 each day, This will be all changes from the main branch as represented at time of release. It should be assumed there are pending validations and issues. Use `nightly` tag.
-
-```bash
-npm install -g @google/gemini-cli@nightly
-```
+When a provider is active, the footer and summary panels show the provider and model names.
 
 ## 📋 Key Features
 
@@ -98,15 +73,6 @@ npm install -g @google/gemini-cli@nightly
 - Conversation checkpointing to save and resume complex sessions
 - Custom context files (GEMINI.md) to tailor behavior for your projects
 
-### GitHub Integration
-
-Integrate Ionesco CLI directly into your GitHub workflows with [**Ionesco CLI GitHub Action (`run-gemini-cli`)**](https://github.com/google-github-actions/run-gemini-cli):
-
-- **Pull Request Reviews**: Automated code review with contextual feedback and suggestions
-- **Issue Triage**: Automated labeling and prioritization of GitHub issues based on content analysis
-- **On-demand Assistance**: Mention `@gemini-cli` in issues and pull requests for help with debugging, explanations, or task delegation
-- **Custom Workflows**: Build automated, scheduled and on-demand workflows tailored to your team's needs
-
 ## 🔐 Authentication Options
 
 Choose the authentication method that best fits your needs:
@@ -125,7 +91,7 @@ Choose the authentication method that best fits your needs:
 #### Start Ionesco CLI, then choose _Login with Google_ and follow the browser authentication flow when prompted
 
 ```bash
-gemini
+./scripts/start.sh
 ```
 
 #### If you are using a paid Code Assist License from your organization, remember to set the Google Cloud Project
@@ -133,7 +99,7 @@ gemini
 ```bash
 # Set your Google Cloud Project
 export GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_NAME"
-gemini
+./scripts/start.sh
 ```
 
 ### Option 2: Gemini API Key
@@ -149,7 +115,7 @@ gemini
 ```bash
 # Get your key from https://aistudio.google.com/apikey
 export GEMINI_API_KEY="YOUR_API_KEY"
-gemini
+./scripts/start.sh
 ```
 
 ### Option 3: Vertex AI
@@ -166,31 +132,51 @@ gemini
 # Get your key from Google Cloud Console
 export GOOGLE_API_KEY="YOUR_API_KEY"
 export GOOGLE_GENAI_USE_VERTEXAI=true
-gemini
+./scripts/start.sh
 ```
 
 For Google Workspace accounts and other authentication methods, see the [authentication guide](./docs/cli/authentication.md).
 
 ## 🚀 Getting Started
 
+### Project Setup
+
+```bash
+# Clone this repository (replace with your fork URL)
+git clone https://github.com/your-org/ionesco-cli.git
+cd ionesco-cli
+
+# Install Node dependencies and prime the Grok sidecar
+npm install
+./scripts/setup.sh
+
+# Launch the CLI (use scripts\start.bat on Windows)
+./scripts/start.sh
+```
+
+> Tip: run `./scripts/create_alias.sh` to expose a `gemini` shell alias for
+> compatibility with existing workflows.
+
 ### Basic Usage
 
 #### Start in current directory
 
 ```bash
-gemini
+./scripts/start.sh
 ```
 
 #### Include multiple directories
 
 ```bash
-gemini --include-directories ../lib,../docs
+npm run start -- --include-directories ../lib,../docs
 ```
+
+> Use `npm run start -- --help` to view all command-line options. The double dash (`--`) ensures arguments are forwarded to the CLI entrypoint.
 
 #### Use specific model
 
 ```bash
-gemini -m gemini-2.5-flash
+npm run start -- --model gemini-2.5-flash
 ```
 
 #### Non-interactive mode for scripts
@@ -198,15 +184,17 @@ gemini -m gemini-2.5-flash
 Get a simple text response:
 
 ```bash
-gemini -p "Explain the architecture of this codebase"
+npm run start -- --prompt "Explain the architecture of this codebase"
 ```
 
 For more advanced scripting, including how to parse JSON and handle errors, use
 the `--output-format json` flag to get structured output:
 
 ```bash
-gemini -p "Explain the architecture of this codebase" --output-format json
+npm run start -- --prompt "Explain the architecture of this codebase" --output-format json
 ```
+
+Inside the running session, `/agent list` shows available providers and `/agent use <providerId>` switches between them (for example `/agent use grok`).
 
 ### Quick Examples
 
@@ -214,16 +202,16 @@ gemini -p "Explain the architecture of this codebase" --output-format json
 
 ```bash
 cd new-project/
-gemini
+./scripts/start.sh
 > Write me a Discord bot that answers questions using a FAQ.md file I will provide
 ```
 
 #### Analyze existing code
 
 ```bash
-git clone https://github.com/google-gemini/gemini-cli
-cd gemini-cli
-gemini
+git clone https://github.com/your-org/ionesco-cli.git
+cd ionesco-cli
+./scripts/start.sh
 > Give me a summary of all of the changes that went in yesterday
 ```
 
@@ -303,9 +291,9 @@ Check our [Official Roadmap](https://github.com/orgs/google-gemini/projects/11/)
 ## 📖 Resources
 
 - **[Official Roadmap](./ROADMAP.md)** - See what's coming next
-- **[NPM Package](https://www.npmjs.com/package/@google/gemini-cli)** - Package registry
-- **[GitHub Issues](https://github.com/google-gemini/gemini-cli/issues)** - Report bugs or request features
-- **[Security Advisories](https://github.com/google-gemini/gemini-cli/security/advisories)** - Security updates
+- **Upstream Project:** [Gemini CLI](https://github.com/google-gemini/gemini-cli) for historical releases and issue tracking
+- **Issue Tracker:** [your-org/ionesco-cli](https://github.com/your-org/ionesco-cli/issues)
+- **Sidecar Docs:** [Grok Provider README](./providers/grok_sidecar/README.md)
 
 ### Uninstall
 
