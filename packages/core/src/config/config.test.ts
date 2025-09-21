@@ -81,26 +81,36 @@ vi.mock('../tools/memoryTool', () => ({
 }));
 
 const mockContentGeneratorFns = {
-  generateContent: vi.fn<
-    Parameters<ContentGenerator['generateContent']>,
-    ReturnType<ContentGenerator['generateContent']>
-  >(),
-  generateContentStream: vi.fn<
-    Parameters<ContentGenerator['generateContentStream']>,
-    ReturnType<ContentGenerator['generateContentStream']>
-  >(),
-  countTokens: vi.fn<
-    Parameters<ContentGenerator['countTokens']>,
-    ReturnType<ContentGenerator['countTokens']>
-  >(),
-  embedContent: vi.fn<
-    Parameters<ContentGenerator['embedContent']>,
-    ReturnType<ContentGenerator['embedContent']>
-  >(),
-  submitToolResult: vi.fn<
-    Parameters<NonNullable<ContentGenerator['submitToolResult']>>,
-    ReturnType<NonNullable<ContentGenerator['submitToolResult']>>
-  >(),
+  generateContent:
+    vi.fn<
+      (
+        ...args: Parameters<ContentGenerator['generateContent']>
+      ) => ReturnType<ContentGenerator['generateContent']>
+    >(),
+  generateContentStream:
+    vi.fn<
+      (
+        ...args: Parameters<ContentGenerator['generateContentStream']>
+      ) => ReturnType<ContentGenerator['generateContentStream']>
+    >(),
+  countTokens:
+    vi.fn<
+      (
+        ...args: Parameters<ContentGenerator['countTokens']>
+      ) => ReturnType<ContentGenerator['countTokens']>
+    >(),
+  embedContent:
+    vi.fn<
+      (
+        ...args: Parameters<ContentGenerator['embedContent']>
+      ) => ReturnType<ContentGenerator['embedContent']>
+    >(),
+  submitToolResult:
+    vi.fn<
+      (
+        ...args: Parameters<NonNullable<ContentGenerator['submitToolResult']>>
+      ) => ReturnType<NonNullable<ContentGenerator['submitToolResult']>>
+    >(),
 };
 
 const mockContentGenerator =
