@@ -1,12 +1,12 @@
-# Ionesco CLI (formerly Gemini CLI)
+# Ionesco CLI
 
 [![Ionesco CLI CI](https://github.com/google-gemini/gemini-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/google-gemini/gemini-cli/actions/workflows/ci.yml)
 [![Ionesco CLI E2E](https://github.com/google-gemini/gemini-cli/actions/workflows/e2e.yml/badge.svg)](https://github.com/google-gemini/gemini-cli/actions/workflows/e2e.yml)
 [![License](https://img.shields.io/github/license/google-gemini/gemini-cli)](https://github.com/google-gemini/gemini-cli/blob/main/LICENSE)
 
-![Ionesco CLI Screenshot](./docs/assets/gemini-screenshot.png)
+![Ionesco CLI Screenshot](./docs/assets/ionesco-splash.png)
 
-Ionesco CLI is an open-source AI agent (formerly known as Gemini CLI) that brings the power of Gemini directly into your terminal. It provides lightweight access to Gemini, giving you the most direct path from your prompt to our model.
+Ionesco CLI is an open-source AI agent that brings the power of Gemini directly into your terminal. It provides lightweight access to Gemini, giving you the most direct path from your prompt to our model.
 
 ## 🚀 Why Ionesco CLI?
 
