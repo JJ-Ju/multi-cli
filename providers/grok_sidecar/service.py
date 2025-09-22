@@ -299,13 +299,16 @@ class GrokService:
         search_params = _chat_search_parameters(mode=mode or "on")
         user_message = self._message_builder("user")(trimmed)
 
+        chat_kwargs: Dict[str, Any] = {
+            "model": DEFAULT_MODEL,
+            "messages": [user_message],
+            "search_parameters": search_params,
+        }
+        if max_tokens is not None:
+            chat_kwargs["max_tokens"] = max_tokens
+
         try:
-            chat = self._client.chat.create(
-                model=DEFAULT_MODEL,
-                messages=[user_message],
-                search_parameters=search_params,
-                max_tokens=max_tokens or 512,
-            )
+            chat = self._client.chat.create(**chat_kwargs)
             response = chat.sample()
         except Exception as exc:  # pragma: no cover - dependency failure
             raise GrokServiceError(f"Web search failed: {exc}") from exc
@@ -377,16 +380,19 @@ class GrokService:
             "Provide concise, factual summaries."
         )
 
+        chat_kwargs: Dict[str, Any] = {
+            "model": self._config.get("model", DEFAULT_MODEL),
+            "messages": [
+                self._message_builder("system")(system_prompt),
+                self._message_builder("user")(user_payload),
+            ],
+            "search_parameters": _chat_search_parameters(mode="on"),
+        }
+        if max_tokens is not None:
+            chat_kwargs["max_tokens"] = max_tokens
+
         try:
-            chat = self._client.chat.create(
-                model=self._config.get("model"),
-                messages=[
-                    self._message_builder("system")(system_prompt),
-                    self._message_builder("user")(user_payload),
-                ],
-                search_parameters=_chat_search_parameters(mode="on"),
-                max_tokens=max_tokens or 768,
-            )
+            chat = self._client.chat.create(**chat_kwargs)
             response = chat.sample()
         except Exception as exc:  # pragma: no cover - dependency failure
             raise GrokServiceError(f"Web fetch summarisation failed: {exc}") from exc
@@ -412,7 +418,7 @@ class GrokService:
         currentContent: str,
         originalParams: Dict[str, Any],
         instruction: Optional[str] = None,
-        max_tokens: int | None = 512,
+        max_tokens: int | None = None,
     ) -> dict:
         self._ensure_ready()
         params = dict(originalParams or {})
@@ -427,17 +433,20 @@ class GrokService:
             "instruction": instruction or "",
         }
 
+        chat_kwargs: Dict[str, Any] = {
+            "model": self._config.get("model", DEFAULT_MODEL),
+            "messages": [
+                self._message_builder("system")(
+                    "You correct failing code edit operations. Return JSON with old_string, new_string, explanation."
+                ),
+                self._message_builder("user")(json.dumps(payload, ensure_ascii=False)),
+            ],
+        }
+        if max_tokens is not None:
+            chat_kwargs["max_tokens"] = max_tokens
+
         try:
-            chat = self._client.chat.create(
-                model=self._config.get("model"),
-                messages=[
-                    self._message_builder("system")(
-                        "You correct failing code edit operations. Return JSON with old_string, new_string, explanation."
-                    ),
-                    self._message_builder("user")(json.dumps(payload, ensure_ascii=False)),
-                ],
-                max_tokens=max_tokens or 512,
-            )
+            chat = self._client.chat.create(**chat_kwargs)
             response = chat.sample()
             data = json.loads(response.content)
         except Exception:
@@ -457,25 +466,28 @@ class GrokService:
         self,
         *,
         content: str,
-        max_tokens: int | None = 512,
+        max_tokens: int | None = None,
     ) -> dict:
         self._ensure_ready()
         snippet = content[:8000]
         if not snippet.strip():
             return {"content": content}
 
+        chat_kwargs: Dict[str, Any] = {
+            "model": self._config.get("model", DEFAULT_MODEL),
+            "messages": [
+                self._message_builder("system")(
+                    "Normalise the provided file content, fixing whitespace or newline issues. "
+                    "Return the corrected file exactly."
+                ),
+                self._message_builder("user")(snippet),
+            ],
+        }
+        if max_tokens is not None:
+            chat_kwargs["max_tokens"] = max_tokens
+
         try:
-            chat = self._client.chat.create(
-                model=self._config.get("model"),
-                messages=[
-                    self._message_builder("system")(
-                        "Normalise the provided file content, fixing whitespace or newline issues. "
-                        "Return the corrected file exactly."
-                    ),
-                    self._message_builder("user")(snippet),
-                ],
-                max_tokens=max_tokens or 512,
-            )
+            chat = self._client.chat.create(**chat_kwargs)
             response = chat.sample()
             normalised = response.content or content
         except Exception:
@@ -493,7 +505,7 @@ class GrokService:
         newString: str,
         error: Optional[str] = None,
         currentContent: Optional[str] = None,
-        max_tokens: int | None = 512,
+        max_tokens: int | None = None,
     ) -> dict:
         self._ensure_ready()
         fallback = {
@@ -511,17 +523,20 @@ class GrokService:
             "currentContentTail": (currentContent or "")[-4000:],
         }
 
+        chat_kwargs: Dict[str, Any] = {
+            "model": self._config.get("model", DEFAULT_MODEL),
+            "messages": [
+                self._message_builder("system")(
+                    "You repair failed search-and-replace operations. Return JSON with search, replace, noChangesRequired, explanation."
+                ),
+                self._message_builder("user")(json.dumps(payload, ensure_ascii=False)),
+            ],
+        }
+        if max_tokens is not None:
+            chat_kwargs["max_tokens"] = max_tokens
+
         try:
-            chat = self._client.chat.create(
-                model=self._config.get("model"),
-                messages=[
-                    self._message_builder("system")(
-                        "You repair failed search-and-replace operations. Return JSON with search, replace, noChangesRequired, explanation."
-                    ),
-                    self._message_builder("user")(json.dumps(payload, ensure_ascii=False)),
-                ],
-                max_tokens=max_tokens or 512,
-            )
+            chat = self._client.chat.create(**chat_kwargs)
             response = chat.sample()
             data = json.loads(response.content)
         except Exception:
@@ -548,24 +563,27 @@ class GrokService:
         self,
         *,
         text: str,
-        max_output_tokens: int | None = 256,
+        max_output_tokens: int | None = 2000,
     ) -> dict:
         self._ensure_ready()
         snippet = text[:8000]
         if not snippet.strip():
             return {"summary": ""}
 
+        chat_kwargs: Dict[str, Any] = {
+            "model": self._config.get("model", DEFAULT_MODEL),
+            "messages": [
+                self._message_builder("system")(
+                    "Provide a concise summary of the given text. Focus on key actions and decisions."
+                ),
+                self._message_builder("user")(snippet),
+            ],
+        }
+        if max_output_tokens is not None:
+            chat_kwargs["max_tokens"] = max_output_tokens
+
         try:
-            chat = self._client.chat.create(
-                model=self._config.get("model"),
-                messages=[
-                    self._message_builder("system")(
-                        "Provide a concise summary of the given text. Focus on key actions and decisions."
-                    ),
-                    self._message_builder("user")(snippet),
-                ],
-                max_tokens=max_output_tokens or 256,
-            )
+            chat = self._client.chat.create(**chat_kwargs)
             response = chat.sample()
             summary = (response.content or "").strip()
         except Exception:
